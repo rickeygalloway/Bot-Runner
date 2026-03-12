@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BotRunner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+  <!-- ── Header ─────────────────────────────────────────────────────────── -->
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-bracket">[</span>
+        BOTRUNNER
+        <span class="logo-bracket">]</span>
+      </div>
+      <div class="header-meta">
+        <span class="meta-label">REFRESHED</span>
+        <span class="meta-value mono">{{ now }}</span>
+        <button class="refresh-btn" onclick="location.reload()">↺ Refresh</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ── Bot Cards ──────────────────────────────────────────────────────── -->
+    <section class="section">
+      <h2 class="section-title">BOTS</h2>
+      <div class="cards-grid">
+        {% for bot in bots %}
+        <div class="card {% if bot.error %}card--error{% elif not bot.enabled %}card--disabled{% elif bot.last_status == 'success' %}card--success{% elif bot.last_status == 'failure' %}card--failure{% endif %}"
+             id="card-{{ bot.name }}">
+
+          <div class="card-header">
+            <div class="card-title-row">
+              <span class="card-name">{{ bot.display }}</span>
+              <span class="status-pill {% if bot.error %}pill--error{% elif not bot.enabled %}pill--disabled{% elif bot.last_status == 'success' %}pill--success{% elif bot.last_status == 'failure' %}pill--failure{% else %}pill--unknown{% endif %}">
+                {% if bot.error %}ERROR
+                {% elif not bot.enabled %}DISABLED
+                {% elif bot.last_status == 'success' %}OK
+                {% elif bot.last_status == 'failure' %}FAIL
+                {% else %}PENDING{% endif %}
+              </span>
+            </div>
+            <p class="card-description">{{ bot.description }}</p>
+          </div>
+
+          <div class="card-body">
+            <div class="stat-row">
+              <span class="stat-label">SCHEDULE</span>
+              <span class="stat-value mono">{{ bot.schedule }}</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">LAST RUN</span>
+              <span class="stat-value mono">{{ bot.last_run }}</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">NEXT RUN</span>
+              <span class="stat-value mono">{{ bot.next_run }}</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">NOTIFY</span>
+              <span class="stat-value mono">{{ bot.notify.provider | default('—') }} / {{ bot.notify.on | default('—') }}</span>
+            </div>
+            <div class="stat-row stat-row--result">
+              <span class="stat-label">LAST RESULT</span>
+              <span class="stat-value mono result-text">{{ bot.last_result }}</span>
+            </div>
+            <div class="stats-bar">
+              <span class="stat-success">✓ {{ bot.successes }}</span>
+              <span class="stat-failure">✗ {{ bot.failures }}</span>
+              <span class="stat-total">{{ bot.total }} total</span>
+            </div>
+          </div>
+
+          <div class="card-footer">
+            <button class="btn btn--log" onclick="openLog('{{ bot.name }}')">
+              VIEW LOG
+            </button>
+            <button
+              class="btn btn--toggle {% if bot.enabled %}btn--on{% else %}btn--off{% endif %}"
+              onclick="toggleBot('{{ bot.name }}', this)"
+              {% if bot.error %}disabled{% endif %}>
+              {{ 'ENABLED' if bot.enabled else 'DISABLED' }}
+            </button>
+          </div>
+
+          {% if bot.error %}
+          <div class="error-banner">⚠ {{ bot.error }}</div>
+          {% endif %}
+
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- ── Run History Chart ───────────────────────────────────────────────── -->
+    <section class="section">
+      <h2 class="section-title">RUN HISTORY</h2>
+      <div class="chart-container">
+        <canvas id="runChart"></canvas>
+      </div>
+    </section>
+
+    <!-- ── Log Viewer ─────────────────────────────────────────────────────── -->
+    <section class="section" id="log-section" style="display:none">
+      <div class="log-header">
+        <h2 class="section-title" id="log-title">LOG</h2>
+        <button class="btn btn--log" onclick="closeLog()">✕ CLOSE</button>
+      </div>
+      <pre class="log-viewer" id="log-content">Loading...</pre>
+    </section>
+
+  </main>
+
+  <!-- ── Chart data passed from server ──────────────────────────────────── -->
+  <script>
+    const ALL_RUNS = {{ all_runs | tojson }};
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="/static/dashboard.js"></script>
+
+</body>
+</html>

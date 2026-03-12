@@ -1,0 +1,24 @@
+# ── BotRunner requirements.txt ───────────────────────────────────────────────
+# Python 3.11+
+
+# Core infrastructure
+apscheduler==3.10.4
+loguru==0.7.2
+python-dotenv==1.0.1
+pyyaml==6.0.2
+
+# Dashboard
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+jinja2==3.1.4
+
+# Notifications
+python-telegram-bot==21.3
+
+# Forex trader bot
+oandapyV20==0.7.2
+pandas==2.2.2
+numpy==1.26.4
+
+# News digest bot
+feedparser==6.0.11

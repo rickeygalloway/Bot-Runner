@@ -1,0 +1,75 @@
+# BotRunner
+
+A single-process bot scheduler with a web dashboard. Bots run on cron schedules via APScheduler; a FastAPI dashboard provides live status, run history, and enable/disable controls.
+
+## Quick start
+
+```bash
+# Python 3.11+ required
+pip install -r requirements.txt
+
+cp .env.example .env   # fill in your values
+
+python main.py
+```
+
+Dashboard: `http://127.0.0.1:8000`
+
+## Configuration
+
+All settings are read from `.env` (see `.env.example`). Bot-level config lives in each bot's `config.yaml`.
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `DASHBOARD_HOST` | `127.0.0.1` | Dashboard bind address |
+| `DASHBOARD_PORT` | `8000` | Dashboard port |
+| `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` | — | Telegram notifications |
+| `EMAIL_SENDER` / `EMAIL_PASSWORD` / `EMAIL_RECEIVER` | — | Gmail SMTP notifications |
+| `OANDA_API_KEY` / `OANDA_ACCOUNT_ID` / `OANDA_ENV` | — | Forex trader bot |
+
+## Adding a bot
+
+Create `bots/<name>/bot.py` with a `run()` function and a `config.yaml`:
+
+```
+bots/
+└── my_bot/
+    ├── bot.py        # must expose run() -> str | None
+    └── config.yaml
+```
+
+`config.yaml` schema:
+
+```yaml
+name: My Bot
+description: What it does
+schedule: "0 9 * * 1-5"   # standard crontab, UTC
+enabled: true
+notify:
+  provider: telegram       # "telegram" or "email"
+  on: failure              # "success" | "failure" | "always"
+```
+
+The scheduler picks up the new bot automatically on next startup — no registration code needed.
+
+- `run()` returning a string → stored as the run message, marked **success**
+- `run()` raising an exception → traceback stored, marked **failure**
+- Bot-level logging: `from core.logger import get_logger; log = get_logger("my_bot")`
+- Config/secrets: `import core.config as cfg`
+
+## Included bots
+
+| Bot | Schedule | Description |
+|-----|----------|-------------|
+| `forex_trader` | Every 4 hours | EUR/USD 9/21 EMA crossover strategy via OANDA |
+| `news_digest` | Daily 08:00 UTC | Reuters, BBC, FT headlines via RSS → email digest |
+
+## Dashboard API
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/` | GET | Dashboard UI |
+| `/api/bots` | GET | JSON status for all bots |
+| `/api/runs/{name}` | GET | Run history for a bot (`?limit=50`) |
+| `/api/logs/{name}` | GET | Last N log lines (`?lines=200`) |
+| `/api/bots/{name}/toggle` | POST | Enable/disable a bot |
