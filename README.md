@@ -10,14 +10,17 @@ pip install -r requirements.txt
 
 cp .env.example .env   # fill in your values
 
+pre-commit install     # install git hooks (blocks credential commits)
+
 python main.py
 ```
 
 Dashboard: `http://127.0.0.1:8000`
+Setup / env status: `http://127.0.0.1:8000/setup`
 
 ## Configuration
 
-All settings are read from `.env` (see `.env.example`). Bot-level config lives in each bot's `config.yaml`.
+All settings are read from `.env` (see `.env.example`). If `.env` is missing, the dashboard redirects to `/setup` with instructions. Bot-level config lives in each bot's `config.yaml`.
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
@@ -68,8 +71,13 @@ The scheduler picks up the new bot automatically on next startup — no registra
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/` | GET | Dashboard UI |
+| `/` | GET | Dashboard UI (redirects to `/setup` if `.env` is missing) |
+| `/setup` | GET | Environment variable status and setup instructions |
 | `/api/bots` | GET | JSON status for all bots |
 | `/api/runs/{name}` | GET | Run history for a bot (`?limit=50`) |
 | `/api/logs/{name}` | GET | Last N log lines (`?lines=200`) |
 | `/api/bots/{name}/toggle` | POST | Enable/disable a bot |
+
+## Security
+
+A [gitleaks](https://github.com/gitleaks/gitleaks) pre-commit hook blocks any commit containing credentials or high-entropy secrets. Run `pre-commit install` once after cloning to activate it.

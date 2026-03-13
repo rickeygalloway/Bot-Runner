@@ -12,12 +12,14 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # gitleaks needs full history
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Install ruff
+      - name: Install dev tools
         run: pip install ruff
 
       - name: Lint
@@ -25,3 +27,8 @@ jobs:
 
       - name: Format check
         run: ruff format --check .
+
+      - name: Secrets scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
