@@ -1,6 +1,6 @@
 # BotRunner
 
-A single-process bot scheduler with a web dashboard. Bots run on cron schedules via APScheduler; a FastAPI dashboard provides live status, run history, and enable/disable controls.
+A single-process bot scheduler with a web dashboard. Bots run on cron schedules via APScheduler; a FastAPI dashboard provides live status, run history, manual run controls, and enable/disable toggles.
 
 ## Quick start
 
@@ -10,7 +10,7 @@ pip install -r requirements.txt
 
 cp .env.example .env   # fill in your values
 
-pre-commit install     # install git hooks (blocks credential commits)
+pre-commit install     # activate git hooks (auto-format + credential scanning)
 
 python main.py
 ```
@@ -20,7 +20,7 @@ Setup / env status: `http://127.0.0.1:8000/setup`
 
 ## Configuration
 
-All settings are read from `.env` (see `.env.example`). If `.env` is missing, the dashboard redirects to `/setup` with instructions. Bot-level config lives in each bot's `config.yaml`.
+All settings are read from `.env` (see `.env.example`). If `.env` is missing, the dashboard redirects to `/setup` with per-variable instructions. Bot-level config lives in each bot's `config.yaml`.
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
@@ -77,7 +77,17 @@ The scheduler picks up the new bot automatically on next startup — no registra
 | `/api/runs/{name}` | GET | Run history for a bot (`?limit=50`) |
 | `/api/logs/{name}` | GET | Last N log lines (`?lines=200`) |
 | `/api/bots/{name}/toggle` | POST | Enable/disable a bot |
+| `/api/bots/{name}/run` | POST | Trigger an immediate run (logged to DB) |
 
-## Security
+## Development
 
-A [gitleaks](https://github.com/gitleaks/gitleaks) pre-commit hook blocks any commit containing credentials or high-entropy secrets. Run `pre-commit install` once after cloning to activate it.
+Pre-commit hooks run automatically on every `git commit`:
+
+| Hook | Action |
+|------|--------|
+| `ruff` | Lint and auto-fix Python |
+| `ruff-format` | Auto-format Python in place |
+| `gitleaks` | Block commits containing credentials or high-entropy secrets |
+| `detect-private-key` | Block PEM private keys |
+
+Run `pre-commit install` once after cloning. If a commit is blocked due to formatting changes, re-stage the modified files and commit again.

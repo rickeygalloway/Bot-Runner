@@ -74,6 +74,7 @@ cron fires → _make_job() wrapper → bot.run()
 ## Git rules
 
 - **Never run `git push`** — always leave pushing to the user
+- After making changes, flag if README.md needs updating (new setup steps, changed API endpoints, new bots)
 
 ## Security rules
 
