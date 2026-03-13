@@ -71,6 +71,10 @@ cron fires → _make_job() wrapper → bot.run()
 - `status.json` — last run outcome per bot
 - `logs/<bot_name>.log` — per-bot rotating logs
 
+## Git rules
+
+- **Never run `git push`** — always leave pushing to the user
+
 ## Security rules
 
 - **Never read, print, or log the contents of `.env`** — treat it as off-limits in all circumstances

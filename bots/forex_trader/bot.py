@@ -25,7 +25,7 @@ Safety rules
 from __future__ import annotations
 
 import os
-from datetime import datetime, timezone, date
+from datetime import date
 from typing import Literal
 
 import oandapyV20

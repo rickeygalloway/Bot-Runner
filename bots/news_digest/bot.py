@@ -12,7 +12,6 @@ No external API key needed — pure RSS parsing with feedparser.
 
 from __future__ import annotations
 
-import os
 from datetime import datetime, timezone
 
 import feedparser

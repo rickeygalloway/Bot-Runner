@@ -67,7 +67,7 @@ def _build_bot_cards() -> list[dict]:
     for bot_name, bot in registered.items():
         last_run = get_last_run(bot_name)
         stats    = get_run_stats(bot_name)
-        status   = status_data.get(bot_name, {})
+        _status  = status_data.get(bot_name, {})
         bc       = bot.get("config", {})
 
         cards.append({
