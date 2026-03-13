@@ -1,7 +1,7 @@
-name: News Digest
 description: Fetches top headlines from Reuters, BBC, and FT and sends a daily digest
-schedule: "0 8 * * *"    # every day at 08:00 UTC
 enabled: true
+name: News Digest
 notify:
   provider: email
-  on: always
+  true: always
+schedule: 0 8 * * *

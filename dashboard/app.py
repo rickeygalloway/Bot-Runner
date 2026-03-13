@@ -12,12 +12,13 @@ from pathlib import Path
 
 import yaml
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, PlainTextResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 import core.config as cfg
 from core.database import get_all_runs, get_last_run, get_recent_runs, get_run_stats
+from core.health import env_file_exists, get_env_status
 from core.scheduler import get_registered_bots
 
 # ── App setup ─────────────────────────────────────────────────────────────────
@@ -94,6 +95,8 @@ def _build_bot_cards() -> list[dict]:
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
+    if not env_file_exists():
+        return RedirectResponse(url="/setup")
     cards     = _build_bot_cards()
     all_runs  = get_all_runs(limit=300)
     return templates.TemplateResponse(
@@ -180,3 +183,16 @@ async def get_log(bot_name: str, lines: int = 200):
         all_lines = f.readlines()
     tail = all_lines[-lines:]
     return PlainTextResponse("".join(tail))
+
+
+@app.get("/setup", response_class=HTMLResponse)
+async def setup(request: Request):
+    """Environment variable status and setup instructions."""
+    return templates.TemplateResponse(
+        "setup.html",
+        {
+            "request":         request,
+            "groups":          get_env_status(),
+            "env_file_exists": env_file_exists(),
+        },
+    )

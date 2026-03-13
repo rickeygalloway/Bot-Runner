@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}BotRunner — Setup{% endblock %}
+
+{% block header_meta %}
+  <a href="/" class="refresh-btn" style="text-decoration:none;">← Dashboard</a>
+{% endblock %}
+
+{% block content %}
+  <section class="section">
+    <h2 class="section-title">ENVIRONMENT SETUP</h2>
+
+    {% if not env_file_exists %}
+    <div class="env-banner">
+      ⚠ No .env file found. Copy .env.example to .env and fill in your values.<br>
+      <span style="color: var(--text-dim);">cp .env.example .env</span>
+    </div>
+    {% endif %}
+
+    <div class="legend">
+      <span class="legend-item"><span class="dot dot--set"></span> Configured</span>
+      <span class="legend-item"><span class="dot dot--unset"></span> Missing</span>
+    </div>
+
+    <div class="setup-grid">
+      {% for group in groups %}
+      <div class="setup-card">
+        <div class="setup-card-head">
+          <div class="setup-group">{{ group.group }}</div>
+          <div class="setup-desc">{{ group.description }}</div>
+        </div>
+        <div class="setup-vars">
+          {% for var in group.vars %}
+          <div class="setup-var">
+            <span class="dot {% if var.set %}dot--set{% else %}dot--unset{% endif %}"></span>
+            <span class="var-key">{{ var.key }}</span>
+            <span class="var-label">{{ var.label }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        <div class="setup-howto">
+          <div class="howto-title">HOW TO GET THESE</div>
+          <div class="howto-text">{{ group.how_to }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+{% endblock %}
