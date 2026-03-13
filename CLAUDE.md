@@ -70,3 +70,29 @@ cron fires → _make_job() wrapper → bot.run()
 - `data/botrunner.db` — SQLite database
 - `status.json` — last run outcome per bot
 - `logs/<bot_name>.log` — per-bot rotating logs
+
+## Security rules
+
+- **Never read, print, or log the contents of `.env`** — treat it as off-limits in all circumstances
+- `.env.example` must only contain placeholder values (e.g. `your-api-key`) — never real credentials
+- If real credentials are spotted anywhere in committed files, flag them and replace with placeholders before doing anything else
+
+## Coding standards
+
+### Bots
+- All config and secrets via `core.config` — never hardcode or use `os.getenv` directly in a bot
+- Logger: `log = get_logger("<bot_name>")` at module level; use lazy loguru formatting (`log.info("x={}", x)`)
+- Let exceptions propagate from `run()` — the scheduler wrapper handles them and marks the run as `failure`
+- No `asyncio.run()` inside bots — the Telegram notifier already uses it; nesting will deadlock
+
+### General Python
+- `from __future__ import annotations` at the top of every module
+- Catch specific exceptions; avoid bare `except:`
+- No mutable default arguments
+
+## Custom commands
+
+| Command | Usage |
+|---------|-------|
+| `/review` | Review staged/unstaged changes or a specific file: `/review bots/my_bot/bot.py` |
+| `/new-bot` | Scaffold a new bot: `/new-bot my_bot` |
