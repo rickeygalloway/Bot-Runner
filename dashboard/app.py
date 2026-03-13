@@ -173,6 +173,25 @@ async def toggle_bot(bot_name: str):
     return {"bot": bot_name, "enabled": new_state}
 
 
+@app.post("/api/bots/{bot_name}/run")
+async def run_bot(bot_name: str):
+    """Trigger an immediate run through the full scheduler wrapper (logged to DB)."""
+    import asyncio
+    from core.scheduler import _make_job
+
+    registered = {b["name"]: b for b in get_registered_bots()}
+    if bot_name not in registered:
+        raise HTTPException(status_code=404, detail=f"Bot '{bot_name}' not found")
+
+    bot = registered[bot_name]
+    if bot.get("error"):
+        raise HTTPException(status_code=400, detail=f"Bot '{bot_name}' failed to load")
+
+    job = _make_job(bot)
+    await asyncio.get_event_loop().run_in_executor(None, job)
+    return {"bot": bot_name, "status": "completed"}
+
+
 @app.get("/api/logs/{bot_name}", response_class=PlainTextResponse)
 async def get_log(bot_name: str, lines: int = 200):
     """Return the last N lines of a bot's log file."""

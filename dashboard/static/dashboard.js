@@ -133,6 +133,26 @@ async function toggleBot(botName, btn) {
 }
 
 
+// ── Run bot ───────────────────────────────────────────────────────────────
+
+async function runBot(botName, btn) {
+  btn.disabled = true;
+  btn.textContent = '● RUNNING';
+  btn.classList.add('running');
+
+  try {
+    const res = await fetch(`/api/bots/${botName}/run`, { method: 'POST' });
+    if (!res.ok) throw new Error(await res.text());
+    location.reload();
+  } catch (err) {
+    btn.textContent = '▶ RUN';
+    btn.classList.remove('running');
+    btn.disabled = false;
+    console.error('Run failed:', err);
+  }
+}
+
+
 // ── Log viewer ────────────────────────────────────────────────────────────
 
 async function openLog(botName) {

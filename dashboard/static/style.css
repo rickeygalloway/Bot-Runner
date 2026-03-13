@@ -271,6 +271,14 @@ main {
   border: 1px solid;
 }
 
+.btn--run {
+  background: transparent;
+  border-color: var(--border-acc);
+  color: var(--text-dim);
+}
+.btn--run:hover    { border-color: var(--green); color: var(--green); }
+.btn--run.running  { border-color: var(--amber); color: var(--amber); }
+
 .btn--log {
   background: transparent;
   border-color: var(--border-acc);

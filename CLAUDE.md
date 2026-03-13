@@ -94,6 +94,28 @@ cron fires → _make_job() wrapper → bot.run()
 - Catch specific exceptions; avoid bare `except:`
 - No mutable default arguments
 
+## Domain context
+
+### Forex trader bot (`bots/forex_trader/`)
+- Strategy: 9 EMA / 21 EMA crossover on EUR/USD 4H candles via OANDA API
+- Safety rules that must not be removed or weakened:
+  - One open position at a time — no stacking
+  - Daily loss limit: halt trading if realised P&L ≤ −$25 in a calendar day
+  - Flat market filter: skip if EMA spread < 0.0003
+- Key constants: `STOP_LOSS_PIPS=15`, `TAKE_PROFIT_PIPS=30` (2:1 R:R)
+- `OANDA_ENV=practice` for paper trading; only change to `live` deliberately
+
+### Notification patterns
+- Use `on: always` for trading/action bots — every run outcome matters
+- Use `on: failure` for monitoring/data bots — only alert when something breaks
+- Use `on: always` for digest bots — the output is the value
+
+### Adding AI-powered bots
+- Use the Anthropic SDK (`anthropic` package) for Claude API calls
+- Add `ANTHROPIC_API_KEY` to `.env` and expose it via `core/config.py`
+- Default to `claude-sonnet-4-6` unless the task is simple (use `claude-haiku-4-5-20251001`)
+- AI calls are blocking — keep them inside `run()`, do not spawn threads
+
 ## Custom commands
 
 | Command | Usage |

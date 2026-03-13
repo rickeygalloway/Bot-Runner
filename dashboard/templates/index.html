@@ -61,6 +61,10 @@
         </div>
 
         <div class="card-footer">
+          <button class="btn btn--run" onclick="runBot('{{ bot.name }}', this)"
+            {% if bot.error %}disabled{% endif %}>
+            ▶ RUN
+          </button>
           <button class="btn btn--log" onclick="openLog('{{ bot.name }}')">
             VIEW LOG
           </button>
