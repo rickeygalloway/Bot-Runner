@@ -28,6 +28,8 @@ Never register bots manually — the scheduler auto-discovers them at startup.
 - Let exceptions propagate from `run()` — scheduler handles them
 - No `asyncio.run()` in bots — Telegram notifier already owns the event loop
 - Catch specific exceptions; no bare `except:`
+- Do not run `ruff format` manually — pre-commit hook formats automatically on every commit
+- All dashboard templates extend `dashboard/templates/base.html` — never create standalone HTML pages
 
 ## Security
 

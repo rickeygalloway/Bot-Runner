@@ -33,9 +33,9 @@ def _optional(key: str, default: str = "") -> str:
 
 
 # ── Paths ────────────────────────────────────────────────────────────────────
-BOTS_DIR    = ROOT_DIR / "bots"
-LOGS_DIR    = ROOT_DIR / "logs"
-DATA_DIR    = ROOT_DIR / "data"
+BOTS_DIR = ROOT_DIR / "bots"
+LOGS_DIR = ROOT_DIR / "logs"
+DATA_DIR = ROOT_DIR / "data"
 STATUS_FILE = ROOT_DIR / "status.json"
 
 # Ensure directories exist at import time
@@ -51,16 +51,16 @@ DASHBOARD_PORT = int(_optional("DASHBOARD_PORT", "8000"))
 
 # ── Telegram ─────────────────────────────────────────────────────────────────
 TELEGRAM_BOT_TOKEN = _optional("TELEGRAM_BOT_TOKEN")
-TELEGRAM_CHAT_ID   = _optional("TELEGRAM_CHAT_ID")
+TELEGRAM_CHAT_ID = _optional("TELEGRAM_CHAT_ID")
 
 # ── Email (Gmail SMTP) ────────────────────────────────────────────────────────
-EMAIL_SENDER   = _optional("EMAIL_SENDER")
-EMAIL_PASSWORD = _optional("EMAIL_PASSWORD")   # Gmail App Password
+EMAIL_SENDER = _optional("EMAIL_SENDER")
+EMAIL_PASSWORD = _optional("EMAIL_PASSWORD")  # Gmail App Password
 EMAIL_RECEIVER = _optional("EMAIL_RECEIVER")
-SMTP_HOST      = _optional("SMTP_HOST", "smtp.gmail.com")
-SMTP_PORT      = int(_optional("SMTP_PORT", "587"))
+SMTP_HOST = _optional("SMTP_HOST", "smtp.gmail.com")
+SMTP_PORT = int(_optional("SMTP_PORT", "587"))
 
 # ── OANDA (forex_trader bot) ──────────────────────────────────────────────────
-OANDA_API_KEY    = _optional("OANDA_API_KEY")
+OANDA_API_KEY = _optional("OANDA_API_KEY")
 OANDA_ACCOUNT_ID = _optional("OANDA_ACCOUNT_ID")
-OANDA_ENV        = _optional("OANDA_ENV", "practice")   # "practice" | "live"
+OANDA_ENV = _optional("OANDA_ENV", "practice")  # "practice" | "live"

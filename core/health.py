@@ -22,8 +22,16 @@ def get_env_status() -> list[dict]:
                 "2. For your Chat ID, message @userinfobot — it replies with your numeric ID."
             ),
             "vars": [
-                {"key": "TELEGRAM_BOT_TOKEN", "label": "Bot Token",  "set": bool(cfg.TELEGRAM_BOT_TOKEN)},
-                {"key": "TELEGRAM_CHAT_ID",   "label": "Chat ID",    "set": bool(cfg.TELEGRAM_CHAT_ID)},
+                {
+                    "key": "TELEGRAM_BOT_TOKEN",
+                    "label": "Bot Token",
+                    "set": bool(cfg.TELEGRAM_BOT_TOKEN),
+                },
+                {
+                    "key": "TELEGRAM_CHAT_ID",
+                    "label": "Chat ID",
+                    "set": bool(cfg.TELEGRAM_CHAT_ID),
+                },
             ],
         },
         {
@@ -36,9 +44,21 @@ def get_env_status() -> list[dict]:
                 "   Note: use your full Gmail address for EMAIL_SENDER."
             ),
             "vars": [
-                {"key": "EMAIL_SENDER",   "label": "Sender address",     "set": bool(cfg.EMAIL_SENDER)},
-                {"key": "EMAIL_PASSWORD", "label": "Gmail App Password",  "set": bool(cfg.EMAIL_PASSWORD)},
-                {"key": "EMAIL_RECEIVER", "label": "Receiver address",    "set": bool(cfg.EMAIL_RECEIVER)},
+                {
+                    "key": "EMAIL_SENDER",
+                    "label": "Sender address",
+                    "set": bool(cfg.EMAIL_SENDER),
+                },
+                {
+                    "key": "EMAIL_PASSWORD",
+                    "label": "Gmail App Password",
+                    "set": bool(cfg.EMAIL_PASSWORD),
+                },
+                {
+                    "key": "EMAIL_RECEIVER",
+                    "label": "Receiver address",
+                    "set": bool(cfg.EMAIL_RECEIVER),
+                },
             ],
         },
         {
@@ -51,9 +71,21 @@ def get_env_status() -> list[dict]:
                 "   Set OANDA_ENV to 'practice' for a demo account or 'live' for real trading."
             ),
             "vars": [
-                {"key": "OANDA_API_KEY",    "label": "API Key",              "set": bool(cfg.OANDA_API_KEY)},
-                {"key": "OANDA_ACCOUNT_ID", "label": "Account ID",           "set": bool(cfg.OANDA_ACCOUNT_ID)},
-                {"key": "OANDA_ENV",        "label": "Environment",          "set": bool(cfg.OANDA_ENV)},
+                {
+                    "key": "OANDA_API_KEY",
+                    "label": "API Key",
+                    "set": bool(cfg.OANDA_API_KEY),
+                },
+                {
+                    "key": "OANDA_ACCOUNT_ID",
+                    "label": "Account ID",
+                    "set": bool(cfg.OANDA_ACCOUNT_ID),
+                },
+                {
+                    "key": "OANDA_ENV",
+                    "label": "Environment",
+                    "set": bool(cfg.OANDA_ENV),
+                },
             ],
         },
     ]
@@ -61,4 +93,5 @@ def get_env_status() -> list[dict]:
 
 def env_file_exists() -> bool:
     from core.config import ROOT_DIR
+
     return (ROOT_DIR / ".env").exists()

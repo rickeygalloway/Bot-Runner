@@ -26,6 +26,7 @@ from core.logger import framework_logger as log
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
+
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
@@ -46,6 +47,7 @@ def _conn() -> Generator[sqlite3.Connection, None, None]:
 
 # ── Initialisation ────────────────────────────────────────────────────────────
 
+
 def init_db() -> None:
     """Create tables if they don't exist. Called once at startup."""
     with _conn() as con:
@@ -65,6 +67,7 @@ def init_db() -> None:
 
 
 # ── Write helpers ─────────────────────────────────────────────────────────────
+
 
 def record_run_start(bot_name: str) -> int:
     """Insert a 'running' row and return its id."""
@@ -91,6 +94,7 @@ def record_run_end(run_id: int, status: str, message: str = "") -> None:
 
 
 # ── Read helpers ──────────────────────────────────────────────────────────────
+
 
 def get_recent_runs(bot_name: str, limit: int = 50) -> list[dict]:
     """Return the most recent *limit* runs for a bot, newest first."""

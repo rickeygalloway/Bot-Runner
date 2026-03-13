@@ -25,6 +25,7 @@ NotifyOn = Literal["success", "failure", "always"]
 
 # ── Public entry point ────────────────────────────────────────────────────────
 
+
 def notify(
     *,
     bot_name: str,
@@ -71,6 +72,7 @@ def notify(
 
 # ── Telegram ─────────────────────────────────────────────────────────────────
 
+
 def _send_telegram(*, subject: str, body: str) -> None:
     """Send a message via python-telegram-bot (synchronous wrapper)."""
     token = cfg.TELEGRAM_BOT_TOKEN
@@ -105,9 +107,10 @@ def _send_telegram(*, subject: str, body: str) -> None:
 
 # ── Email (Gmail SMTP) ────────────────────────────────────────────────────────
 
+
 def _send_email(*, subject: str, body: str) -> None:
     """Send a plain-text email via Gmail SMTP with STARTTLS."""
-    sender   = cfg.EMAIL_SENDER
+    sender = cfg.EMAIL_SENDER
     password = cfg.EMAIL_PASSWORD
     receiver = cfg.EMAIL_RECEIVER
 
@@ -120,8 +123,8 @@ def _send_email(*, subject: str, body: str) -> None:
 
     msg = MIMEText(body, "plain")
     msg["Subject"] = subject
-    msg["From"]    = sender
-    msg["To"]      = receiver
+    msg["From"] = sender
+    msg["To"] = receiver
 
     try:
         with smtplib.SMTP(cfg.SMTP_HOST, cfg.SMTP_PORT, timeout=15) as smtp:

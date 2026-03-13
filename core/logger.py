@@ -46,14 +46,13 @@ def get_logger(bot_name: str):
             str(log_path),
             level="DEBUG",
             format=(
-                "{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | "
-                "{extra[bot]} | {message}"
+                "{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | " "{extra[bot]} | {message}"
             ),
             rotation="10 MB",
             retention="7 days",
             compression="zip",
             filter=lambda record, name=bot_name: record["extra"].get("bot") == name,
-            enqueue=True,   # thread-safe for APScheduler workers
+            enqueue=True,  # thread-safe for APScheduler workers
         )
         _registered.add(bot_name)
 

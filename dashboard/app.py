@@ -37,10 +37,12 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
+
 def _next_run_time(bot_name: str) -> str:
     """Return ISO string of next scheduled run, or 'n/a'."""
     try:
         from core.scheduler import _scheduler
+
         job = _scheduler.get_job(bot_name)
         if job and job.next_run_time:
             return job.next_run_time.strftime("%Y-%m-%d %H:%M UTC")
@@ -67,45 +69,50 @@ def _build_bot_cards() -> list[dict]:
 
     for bot_name, bot in registered.items():
         last_run = get_last_run(bot_name)
-        stats    = get_run_stats(bot_name)
-        _status  = status_data.get(bot_name, {})
-        bc       = bot.get("config", {})
+        stats = get_run_stats(bot_name)
+        _status = status_data.get(bot_name, {})
+        bc = bot.get("config", {})
 
-        cards.append({
-            "name":        bot_name,
-            "display":     bc.get("name", bot_name),
-            "description": bc.get("description", ""),
-            "schedule":    bc.get("schedule", ""),
-            "enabled":     bc.get("enabled", True),
-            "error":       bot.get("error"),
-            "last_run":    last_run["start_time"][:19].replace("T", " ") if last_run else "never",
-            "last_status": last_run["status"] if last_run else "—",
-            "last_result": (last_run["message"] or "")[:120] if last_run else "—",
-            "next_run":    _next_run_time(bot_name),
-            "successes":   stats["successes"],
-            "failures":    stats["failures"],
-            "total":       stats["total"],
-            "notify":      bc.get("notify", {}),
-        })
+        cards.append(
+            {
+                "name": bot_name,
+                "display": bc.get("name", bot_name),
+                "description": bc.get("description", ""),
+                "schedule": bc.get("schedule", ""),
+                "enabled": bc.get("enabled", True),
+                "error": bot.get("error"),
+                "last_run": last_run["start_time"][:19].replace("T", " ")
+                if last_run
+                else "never",
+                "last_status": last_run["status"] if last_run else "—",
+                "last_result": (last_run["message"] or "")[:120] if last_run else "—",
+                "next_run": _next_run_time(bot_name),
+                "successes": stats["successes"],
+                "failures": stats["failures"],
+                "total": stats["total"],
+                "notify": bc.get("notify", {}),
+            }
+        )
 
     return cards
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
 
+
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     if not env_file_exists():
         return RedirectResponse(url="/setup")
-    cards     = _build_bot_cards()
-    all_runs  = get_all_runs(limit=300)
+    cards = _build_bot_cards()
+    all_runs = get_all_runs(limit=300)
     return templates.TemplateResponse(
         "index.html",
         {
-            "request":  request,
-            "bots":     cards,
+            "request": request,
+            "bots": cards,
             "all_runs": all_runs,
-            "now":      datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+            "now": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
         },
     )
 
@@ -114,6 +121,7 @@ async def index(request: Request):
 async def api_bots():
     """JSON endpoint for bot status — useful for external monitoring."""
     import json
+
     return HTMLResponse(
         content=json.dumps(_build_bot_cards(), indent=2),
         media_type="application/json",
@@ -135,7 +143,7 @@ async def toggle_bot(bot_name: str):
     if bot_name not in registered:
         raise HTTPException(status_code=404, detail=f"Bot '{bot_name}' not found")
 
-    bot        = registered[bot_name]
+    bot = registered[bot_name]
     config_path: Path = bot["dir"] / "config.yaml"
 
     with open(config_path) as f:
@@ -210,8 +218,8 @@ async def setup(request: Request):
     return templates.TemplateResponse(
         "setup.html",
         {
-            "request":         request,
-            "groups":          get_env_status(),
+            "request": request,
+            "groups": get_env_status(),
             "env_file_exists": env_file_exists(),
         },
     )

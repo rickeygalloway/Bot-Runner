@@ -54,7 +54,7 @@ def main():
             app,
             host=cfg.DASHBOARD_HOST,
             port=cfg.DASHBOARD_PORT,
-            log_level="warning",   # suppress uvicorn noise; loguru handles logging
+            log_level="warning",  # suppress uvicorn noise; loguru handles logging
         )
     finally:
         stop_scheduler()

@@ -53,7 +53,7 @@ The scheduler auto-discovers bots at startup — no registration code needed. Bo
 
 ### Dashboard (`dashboard/`)
 
-FastAPI app with Jinja2 templates. Read-only except for `POST /api/bots/{name}/toggle`, which writes back to the bot's `config.yaml` and live-updates the scheduler. The dashboard reads bot state from three sources: in-memory scheduler state, SQLite run history, and `status.json` (last run outcome, written by the scheduler after each run).
+FastAPI app with Jinja2 templates. Read-only except for `POST /api/bots/{name}/toggle` and `POST /api/bots/{name}/run`. All templates extend `dashboard/templates/base.html` — never create a standalone HTML page. New pages use `{% extends "base.html" %}` and fill `{% block title %}`, `{% block header_meta %}`, and `{% block content %}`.
 
 ### Data flow
 
@@ -93,6 +93,7 @@ cron fires → _make_job() wrapper → bot.run()
 - `from __future__ import annotations` at the top of every module
 - Catch specific exceptions; avoid bare `except:`
 - No mutable default arguments
+- Do not run `ruff format` manually — the pre-commit hook formats automatically on every commit
 
 ## Domain context
 

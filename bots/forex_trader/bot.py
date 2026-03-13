@@ -42,19 +42,20 @@ import core.config as cfg
 log = get_logger("forex_trader")
 
 # ── Constants ─────────────────────────────────────────────────────────────────
-INSTRUMENT       = "EUR_USD"
-GRANULARITY      = "H4"
-CANDLE_COUNT     = 50        # enough history for both EMAs to be stable
-EMA_FAST         = 9
-EMA_SLOW         = 21
-PIP_SIZE         = 0.0001    # EUR/USD pip
-STOP_LOSS_PIPS   = 15
+INSTRUMENT = "EUR_USD"
+GRANULARITY = "H4"
+CANDLE_COUNT = 50  # enough history for both EMAs to be stable
+EMA_FAST = 9
+EMA_SLOW = 21
+PIP_SIZE = 0.0001  # EUR/USD pip
+STOP_LOSS_PIPS = 15
 TAKE_PROFIT_PIPS = 30
-FLAT_THRESHOLD   = 0.0003    # minimum EMA spread to consider market trending
-DAILY_LOSS_LIMIT = -25.0     # USD — halt trading if daily P&L hits this
+FLAT_THRESHOLD = 0.0003  # minimum EMA spread to consider market trending
+DAILY_LOSS_LIMIT = -25.0  # USD — halt trading if daily P&L hits this
 
 
 # ── OANDA client factory ──────────────────────────────────────────────────────
+
 
 def _client() -> oandapyV20.API:
     environment = "practice" if cfg.OANDA_ENV != "live" else "live"
@@ -66,12 +67,13 @@ def _client() -> oandapyV20.API:
 
 # ── Market data ───────────────────────────────────────────────────────────────
 
+
 def _fetch_candles(client: oandapyV20.API) -> pd.DataFrame:
     """Fetch the last N 4H candles for EUR/USD and return as a DataFrame."""
     params = {
         "count": CANDLE_COUNT,
         "granularity": GRANULARITY,
-        "price": "M",   # midpoint
+        "price": "M",  # midpoint
     }
     req = instruments.InstrumentsCandles(INSTRUMENT, params=params)
     resp = client.request(req)
@@ -79,10 +81,12 @@ def _fetch_candles(client: oandapyV20.API) -> pd.DataFrame:
     rows = []
     for candle in resp["candles"]:
         if candle["complete"]:
-            rows.append({
-                "time":  candle["time"],
-                "close": float(candle["mid"]["c"]),
-            })
+            rows.append(
+                {
+                    "time": candle["time"],
+                    "close": float(candle["mid"]["c"]),
+                }
+            )
 
     df = pd.DataFrame(rows)
     df["time"] = pd.to_datetime(df["time"])
@@ -126,6 +130,7 @@ def _detect_signal(
 
 # ── Account checks ────────────────────────────────────────────────────────────
 
+
 def _get_account_summary(client: oandapyV20.API) -> dict:
     req = accounts.AccountSummary(cfg.OANDA_ACCOUNT_ID)
     resp = client.request(req)
@@ -138,7 +143,7 @@ def _has_open_position(client: oandapyV20.API) -> bool:
     resp = client.request(req)
     for pos in resp.get("positions", []):
         if pos["instrument"] == INSTRUMENT:
-            long_units  = int(pos["long"]["units"])
+            long_units = int(pos["long"]["units"])
             short_units = int(pos["short"]["units"])
             if long_units != 0 or short_units != 0:
                 return True
@@ -166,6 +171,7 @@ def _daily_pl(client: oandapyV20.API) -> float:
 
 # ── Order placement ───────────────────────────────────────────────────────────
 
+
 def _place_order(
     client: oandapyV20.API,
     side: Literal["BUY", "SELL"],
@@ -175,19 +181,19 @@ def _place_order(
     """Place a market order with SL and TP. Returns the trade ID."""
     pip = PIP_SIZE
     if side == "BUY":
-        sl_price = round(current_price - STOP_LOSS_PIPS   * pip, 5)
+        sl_price = round(current_price - STOP_LOSS_PIPS * pip, 5)
         tp_price = round(current_price + TAKE_PROFIT_PIPS * pip, 5)
         unit_str = str(units)
     else:
-        sl_price = round(current_price + STOP_LOSS_PIPS   * pip, 5)
+        sl_price = round(current_price + STOP_LOSS_PIPS * pip, 5)
         tp_price = round(current_price - TAKE_PROFIT_PIPS * pip, 5)
         unit_str = str(-units)
 
     order_data = {
         "order": {
-            "type":       "MARKET",
+            "type": "MARKET",
             "instrument": INSTRUMENT,
-            "units":      unit_str,
+            "units": unit_str,
             "stopLossOnFill": {
                 "price": str(sl_price),
             },
@@ -201,14 +207,14 @@ def _place_order(
     req = orders.OrderCreate(cfg.OANDA_ACCOUNT_ID, data=order_data)
     resp = client.request(req)
 
-    trade_id = (
-        resp.get("orderFillTransaction", {}).get("tradeOpened", {}).get("tradeID")
-        or resp.get("orderFillTransaction", {}).get("tradeID", "unknown")
-    )
+    trade_id = resp.get("orderFillTransaction", {}).get("tradeOpened", {}).get(
+        "tradeID"
+    ) or resp.get("orderFillTransaction", {}).get("tradeID", "unknown")
     return trade_id
 
 
 # ── Main run() ────────────────────────────────────────────────────────────────
+
 
 def run() -> str:
     """
@@ -244,7 +250,10 @@ def run() -> str:
     fast_now, slow_now, fast_prev, slow_prev = _compute_emas(df)
     log.info(
         "EMA9={:.5f}  EMA21={:.5f}  (prev: EMA9={:.5f}  EMA21={:.5f})",
-        fast_now, slow_now, fast_prev, slow_prev,
+        fast_now,
+        slow_now,
+        fast_prev,
+        slow_prev,
     )
 
     current_price = df["close"].iloc[-1]
@@ -265,10 +274,10 @@ def run() -> str:
 
     pip = PIP_SIZE
     if signal == "BUY":
-        sl = round(current_price - STOP_LOSS_PIPS   * pip, 5)
+        sl = round(current_price - STOP_LOSS_PIPS * pip, 5)
         tp = round(current_price + TAKE_PROFIT_PIPS * pip, 5)
     else:
-        sl = round(current_price + STOP_LOSS_PIPS   * pip, 5)
+        sl = round(current_price + STOP_LOSS_PIPS * pip, 5)
         tp = round(current_price - TAKE_PROFIT_PIPS * pip, 5)
 
     msg = (

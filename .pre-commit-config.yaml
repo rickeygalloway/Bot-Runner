@@ -1,4 +1,10 @@
 repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.4.4
+    hooks:
+      - id: ruff          # lint and auto-fix
+      - id: ruff-format   # format in place
+
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.18.4
     hooks:

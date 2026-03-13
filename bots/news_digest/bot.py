@@ -23,18 +23,18 @@ log = get_logger("news_digest")
 # ── Default RSS feeds ─────────────────────────────────────────────────────────
 DEFAULT_FEEDS = [
     {
-        "name":  "Reuters Business",
-        "url":   "https://feeds.reuters.com/reuters/businessNews",
+        "name": "Reuters Business",
+        "url": "https://feeds.reuters.com/reuters/businessNews",
         "limit": 5,
     },
     {
-        "name":  "BBC News",
-        "url":   "http://feeds.bbci.co.uk/news/rss.xml",
+        "name": "BBC News",
+        "url": "http://feeds.bbci.co.uk/news/rss.xml",
         "limit": 5,
     },
     {
-        "name":  "Financial Times",
-        "url":   "https://www.ft.com/rss/home/uk",
+        "name": "Financial Times",
+        "url": "https://www.ft.com/rss/home/uk",
         "limit": 5,
     },
 ]
@@ -42,17 +42,20 @@ DEFAULT_FEEDS = [
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
+
 def _fetch_feed(feed_cfg: dict) -> list[dict]:
     """Fetch and parse a single RSS feed, return list of article dicts."""
     try:
         parsed = feedparser.parse(feed_cfg["url"])
         items = []
         for entry in parsed.entries[: feed_cfg["limit"]]:
-            items.append({
-                "title":   entry.get("title", "(no title)"),
-                "link":    entry.get("link", ""),
-                "summary": entry.get("summary", "")[:200],
-            })
+            items.append(
+                {
+                    "title": entry.get("title", "(no title)"),
+                    "link": entry.get("link", ""),
+                    "summary": entry.get("summary", "")[:200],
+                }
+            )
         log.info("Fetched {} items from {}", len(items), feed_cfg["name"])
         return items
     except Exception as exc:
@@ -82,6 +85,7 @@ def _format_digest(results: dict[str, list[dict]]) -> str:
 
 
 # ── Main run() ────────────────────────────────────────────────────────────────
+
 
 def run() -> str:
     """
