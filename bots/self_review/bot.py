@@ -21,14 +21,16 @@ from core.logger import get_logger
 
 log = get_logger("self_review")
 
-MODEL = "claude-sonnet-4-6"
+MODEL = "claude-haiku-4-5-20251001"  # sufficient for structured review; ~10x cheaper than Sonnet
 MAX_DIFF_CHARS = 12_000  # ~3k tokens; keeps cost predictable on large days
 
 _STATE_FILE = cfg.DATA_DIR / "self_review_last_sha.txt"
+_REVIEW_FILE = cfg.DATA_DIR / "self_review_latest.txt"
 
-REVIEW_PROMPT = """\
-You are an expert Python code reviewer for this specific project. \
-Review ONLY the git diff provided below.
+# Static part — sent as a cacheable system prompt to avoid re-charging on repeated runs
+SYSTEM_PROMPT = """\
+You are an expert Python code reviewer for this specific project.
+Review ONLY the git diff provided in the user message.
 
 ## Project conventions
 The following rules are enforced in this codebase. Flag any violation as an issue.
@@ -58,10 +60,7 @@ The following rules are enforced in this codebase. Flag any violation as an issu
 **Overall Score**: X/10 with one sentence of justification.
 
 If there are no meaningful issues, say so briefly.
-Be specific, actionable, and constructive.
-
-## Git diff
-{diff}
+Be specific, actionable, and constructive.\
 """
 
 
@@ -100,6 +99,18 @@ def _read_last_sha() -> str | None:
 def _write_last_sha(sha: str) -> None:
     """Persist the current HEAD SHA so the next run knows where to start."""
     _STATE_FILE.write_text(sha)
+
+
+def _write_latest_review(review: str) -> None:
+    """Overwrite the cached review file with the latest output."""
+    _REVIEW_FILE.write_text(review, encoding="utf-8")
+
+
+def _read_latest_review() -> str | None:
+    """Return the cached review text, or None if no review has been run yet."""
+    if _REVIEW_FILE.exists():
+        return _REVIEW_FILE.read_text(encoding="utf-8").strip() or None
+    return None
 
 
 def _get_new_diff() -> str | None:
@@ -165,18 +176,45 @@ def _get_new_diff() -> str | None:
 def _call_claude(diff: str) -> str:
     """Send the diff to Claude and return the review text."""
     client = anthropic.Anthropic(api_key=cfg.ANTHROPIC_API_KEY)
-    prompt = REVIEW_PROMPT.format(
-        project_context=_load_project_context(),
-        diff=diff,
-    )
+    system_text = SYSTEM_PROMPT.format(project_context=_load_project_context())
+
     message = client.messages.create(
         model=MODEL,
         max_tokens=1024,
+        system=[
+            {
+                "type": "text",
+                "text": system_text,
+                # Cache the static system prompt — saves tokens on repeated manual runs
+                "cache_control": {"type": "ephemeral"},
+            }
+        ],
         messages=[
-            {"role": "user", "content": prompt},
+            {"role": "user", "content": f"## Git diff\n\n{diff}"},
         ],
     )
-    return message.content[0].text.strip()
+
+    usage = message.usage
+    cache_read = getattr(usage, "cache_read_input_tokens", 0)
+    cache_write = getattr(usage, "cache_creation_input_tokens", 0)
+    log.info(
+        "Token usage — input: {} (cache_read: {} cache_write: {}) output: {}",
+        usage.input_tokens,
+        cache_read,
+        cache_write,
+        usage.output_tokens,
+    )
+
+    review = message.content[0].text.strip()
+
+    token_footer = (
+        f"\n\n---\n" f"*Model: `{MODEL}` · " f"Tokens: {usage.input_tokens} in"
+    )
+    if cache_read:
+        token_footer += f" ({cache_read} cached)"
+    token_footer += f" / {usage.output_tokens} out*"
+
+    return review + token_footer
 
 
 def run() -> str:
@@ -191,13 +229,21 @@ def run() -> str:
 
     diff = _get_new_diff()
     if not diff:
-        return "No new Python changes since last review — nothing to review."
+        cached = _read_latest_review()
+        if cached:
+            log.info("No new commits — resending cached review")
+            return (
+                "_No new commits since last review. Previous results below._\n\n---\n\n"
+                + cached
+            )
+        return "No new commits since last review and no previous review on file."
 
     log.info("Sending diff ({} chars) to Claude", len(diff))
     review = _call_claude(diff)
 
-    # Only advance the pointer after a successful review
+    # Only advance the pointer and overwrite the cache after a successful review
     _write_last_sha(head_sha)
+    _write_latest_review(review)
     log.info("Review complete — state advanced to {}", head_sha[:8])
 
     return review

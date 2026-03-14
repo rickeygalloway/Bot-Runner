@@ -8,7 +8,7 @@ AI-powered code review of recent commits using Claude. Extracts a git diff of Py
 2. Diffs Python files from just before the oldest commit to HEAD
 3. Truncates to 12,000 characters if the diff is large (~3k tokens)
 4. Reads `CLAUDE.md` and injects the **Coding standards** and **Domain context** sections as project conventions
-5. Sends to Claude (`claude-sonnet-4-6`) — reviews against both general best practices and project-specific rules
+5. Sends to Claude (`claude-haiku-4-5-20251001`) — reviews against both general best practices and project-specific rules; token count appended to every review
 6. Returns the review as the run message — delivered via email
 
 ## Review format
