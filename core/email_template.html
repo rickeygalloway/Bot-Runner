@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BotRunner — {{ bot_name }}</title>
+  <style>
+    /* Fallback styles for clients that support <style> (Gmail strips <head> styles) */
+    body { margin: 0; padding: 0; background: #f0f2f5; }
+    a { color: #3b82f6; }
+    p { margin: 0 0 12px; }
+    ul, ol { margin: 0 0 12px; padding-left: 24px; }
+    li { margin-bottom: 4px; }
+    h1, h2, h3 { color: #1a1a2e; margin: 20px 0 8px; }
+    h1 { font-size: 18px; }
+    h2 { font-size: 16px; }
+    h3 { font-size: 14px; }
+    strong { color: #1a1a2e; }
+    code {
+      background: #f0f0f0;
+      color: #c0392b;
+      padding: 2px 5px;
+      border-radius: 3px;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 12px;
+    }
+    pre {
+      background: #1e1e2e;
+      color: #cdd6f4;
+      padding: 14px 16px;
+      border-radius: 6px;
+      overflow-x: auto;
+      margin: 12px 0;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    pre code {
+      background: none;
+      color: inherit;
+      padding: 0;
+      font-size: inherit;
+    }
+    hr { border: none; border-top: 1px solid #e5e7eb; margin: 16px 0; }
+    table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+    th { background: #f3f4f6; text-align: left; padding: 8px 12px; font-size: 12px; border: 1px solid #e5e7eb; }
+    td { padding: 7px 12px; font-size: 13px; border: 1px solid #e5e7eb; }
+  </style>
+</head>
+<body style="margin:0;padding:0;background:#f0f2f5;font-family:'Segoe UI',Helvetica,Arial,sans-serif;">
+
+  <table width="100%" cellpadding="0" cellspacing="0" border="0"
+         style="background:#f0f2f5;padding:32px 16px;">
+    <tr>
+      <td align="center">
+
+        <table width="600" cellpadding="0" cellspacing="0" border="0"
+               style="max-width:600px;width:100%;background:#ffffff;border-radius:10px;
+                      overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.10);">
+
+          <!-- ── Header ──────────────────────────────────────────────────── -->
+          <tr>
+            <td style="background:#1a1a2e;padding:18px 28px;">
+              <span style="color:#c8a96e;font-size:16px;font-weight:700;
+                           letter-spacing:3px;text-transform:uppercase;">
+                BotRunner
+              </span>
+            </td>
+          </tr>
+
+          <!-- ── Status bar ──────────────────────────────────────────────── -->
+          <tr>
+            <td style="background:{{ status_color }};padding:14px 28px;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td>
+                    <span style="color:#ffffff;font-size:16px;font-weight:600;">
+                      {{ bot_name }}
+                    </span>
+                  </td>
+                  <td align="right">
+                    <span style="color:rgba(255,255,255,0.85);font-size:12px;
+                                 font-weight:600;letter-spacing:2px;
+                                 text-transform:uppercase;">
+                      {{ status }}
+                    </span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- ── Body ───────────────────────────────────────────────────── -->
+          <tr>
+            <td style="padding:24px 28px 20px;color:#374151;font-size:14px;
+                       line-height:1.75;">
+              {{ message_html }}
+            </td>
+          </tr>
+
+          <!-- ── Footer ─────────────────────────────────────────────────── -->
+          <tr>
+            <td style="background:#f9fafb;padding:12px 28px;
+                       border-top:1px solid #e5e7eb;">
+              <span style="color:#9ca3af;font-size:11px;">
+                BotRunner &nbsp;·&nbsp; {{ timestamp }}
+              </span>
+            </td>
+          </tr>
+
+        </table>
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>

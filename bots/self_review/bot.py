@@ -10,6 +10,7 @@ the configured notification provider.
 
 from __future__ import annotations
 
+import re
 from datetime import datetime, timedelta, timezone
 
 import anthropic
@@ -22,6 +23,8 @@ log = get_logger("self_review")
 
 MODEL = "claude-sonnet-4-6"
 MAX_DIFF_CHARS = 12_000  # ~3k tokens; keeps cost predictable on large days
+
+_STATE_FILE = cfg.DATA_DIR / "self_review_last_sha.txt"
 
 REVIEW_PROMPT = """\
 You are an expert Python code reviewer for this specific project. \
@@ -79,38 +82,80 @@ def _load_project_context() -> str:
     end = text.find("## Custom commands", start)
     section = text[start:end].strip() if end != -1 else text[start:].strip()
 
-    return section
+    # Hard cap so a renamed/missing sentinel never dumps the entire file into the prompt
+    return section[:4000]
 
 
-def _get_recent_diff(hours: int = 24) -> str | None:
-    """Return a unified diff of Python file changes in the last N hours, or None."""
+_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
+
+
+def _read_last_sha() -> str | None:
+    """Return the SHA saved from the previous run, or None if no state exists."""
+    if _STATE_FILE.exists():
+        sha = _STATE_FILE.read_text().strip()
+        return sha if _SHA_RE.match(sha) else None
+    return None
+
+
+def _write_last_sha(sha: str) -> None:
+    """Persist the current HEAD SHA so the next run knows where to start."""
+    _STATE_FILE.write_text(sha)
+
+
+def _get_new_diff() -> str | None:
+    """
+    Return a unified diff of Python changes since the last review run, or None.
+
+    Uses a persisted SHA to anchor the diff — not a time window — so commits
+    are never reviewed twice and nothing is missed between runs.
+    """
     repo = git.Repo(cfg.ROOT_DIR)
-    since = datetime.now(timezone.utc) - timedelta(hours=hours)
+    head_sha = repo.head.commit.hexsha
 
-    commits = list(repo.iter_commits("HEAD", since=since.strftime("%Y-%m-%d %H:%M:%S")))
-    if not commits:
-        log.info("No commits in the last {} hours", hours)
+    if not _SHA_RE.match(head_sha):
+        raise ValueError(f"Unexpected HEAD SHA format: {head_sha!r}")
+
+    last_sha = _read_last_sha()
+
+    if last_sha == head_sha:
+        log.info("No new commits since last review ({})", head_sha[:8])
         return None
 
-    oldest = commits[-1]
-    log.info(
-        "Found {} commit(s) since {}", len(commits), since.strftime("%Y-%m-%d %H:%M")
-    )
-
-    # Diff from just before the oldest commit to HEAD, Python files only
-    try:
-        diff = repo.git.diff(f"{oldest.hexsha}^", "HEAD", "--", "*.py")
-    except git.GitCommandError:
-        # oldest commit has no parent (initial commit edge case)
-        diff = repo.git.diff(oldest.hexsha, "HEAD", "--", "*.py")
+    if last_sha is None:
+        # First-ever run — review the last 24 hours as a bootstrap so we don't
+        # dump the entire repo history into the prompt.
+        log.info("No previous review state — bootstrapping with last 24 hours")
+        since = datetime.now(timezone.utc) - timedelta(hours=24)
+        commits = [
+            c
+            for c in repo.iter_commits("HEAD", max_count=500)
+            if datetime.fromtimestamp(c.committed_date, tz=timezone.utc) >= since
+        ]
+        if not commits:
+            _write_last_sha(head_sha)
+            return None
+        base = commits[-1]
+        try:
+            diff = repo.git.diff(f"{base.hexsha}^", "HEAD", "--", "*.py")
+        except git.GitCommandError:
+            diff = repo.git.diff(base.hexsha, "HEAD", "--", "*.py")
+    else:
+        # Normal run — diff from the last reviewed commit to HEAD
+        if not _SHA_RE.match(last_sha):
+            raise ValueError(f"Unexpected last_sha format: {last_sha!r}")
+        log.info("Diffing from {} to {}", last_sha[:8], head_sha[:8])
+        diff = repo.git.diff(last_sha, "HEAD", "--", "*.py")
 
     if not diff.strip():
-        log.info("No Python file changes in the diff")
+        log.info("No Python file changes since last review")
+        _write_last_sha(head_sha)
         return None
 
     if len(diff) > MAX_DIFF_CHARS:
-        diff = (
-            diff[:MAX_DIFF_CHARS] + "\n\n[diff truncated — too large to review in full]"
+        # Truncate at a newline boundary so Claude never sees a half-line or mid-hunk cut
+        diff = diff[:MAX_DIFF_CHARS].rsplit("\n", 1)[0]
+        diff += (
+            "\n\n[diff truncated at 12 000 chars — review covers partial changes only]"
         )
         log.warning("Diff truncated to {} chars", MAX_DIFF_CHARS)
 
@@ -141,12 +186,18 @@ def run() -> str:
 
     log.info("Self-review starting")
 
-    diff = _get_recent_diff(hours=24)
+    repo = git.Repo(cfg.ROOT_DIR)
+    head_sha = repo.head.commit.hexsha
+
+    diff = _get_new_diff()
     if not diff:
-        return "No Python changes in the last 24 hours — nothing to review."
+        return "No new Python changes since last review — nothing to review."
 
     log.info("Sending diff ({} chars) to Claude", len(diff))
     review = _call_claude(diff)
-    log.info("Review complete")
+
+    # Only advance the pointer after a successful review
+    _write_last_sha(head_sha)
+    log.info("Review complete — state advanced to {}", head_sha[:8])
 
     return review
