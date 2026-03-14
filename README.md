@@ -68,6 +68,7 @@ The scheduler picks up the new bot automatically on next startup — no registra
 | `forex_trader` | Every 4 hours (UTC) | EUR/USD 9/21 EMA crossover strategy via OANDA API. Enforces one open position, daily loss limit, and flat-market filter. |
 | `news_digest` | Daily 08:00 UTC | Fetches top headlines from Reuters, BBC, and FT via RSS and emails a plain-text digest. |
 | `self_review` | Daily 03:00 UTC | AI-powered code review of recent commits using Claude — sends findings by email. Requires `ANTHROPIC_API_KEY`. |
+| `commit_explainer` | Monday 07:00 UTC | Weekly plain-English changelog of the past 7 days of commits, grouped by theme. Requires `ANTHROPIC_API_KEY`. |
 
 ## Dashboard API
 
