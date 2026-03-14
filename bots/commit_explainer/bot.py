@@ -14,6 +14,8 @@ from datetime import datetime, timedelta, timezone
 import anthropic
 import git
 
+import re
+
 import core.config as cfg
 from core.logger import get_logger
 
@@ -22,6 +24,10 @@ log = get_logger("commit_explainer")
 MODEL = "claude-haiku-4-5-20251001"
 MAX_COMMITS = 100  # safety cap on repo walk
 MAX_INPUT_CHARS = 8_000  # keeps prompt cost predictable
+
+_STATE_FILE = cfg.DATA_DIR / "commit_explainer_last_sha.txt"
+_CHANGELOG_FILE = cfg.DATA_DIR / "commit_explainer_latest.txt"
+_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 
 # Static instructions — cacheable system prompt; date range goes in the user message
 SYSTEM_PROMPT = """\
@@ -43,6 +49,27 @@ Response format:
 
 If a week had no meaningful changes, say so in one sentence.\
 """
+
+
+def _read_last_sha() -> str | None:
+    if _STATE_FILE.exists():
+        sha = _STATE_FILE.read_text().strip()
+        return sha if _SHA_RE.match(sha) else None
+    return None
+
+
+def _write_last_sha(sha: str) -> None:
+    _STATE_FILE.write_text(sha)
+
+
+def _write_latest_changelog(text: str) -> None:
+    _CHANGELOG_FILE.write_text(text, encoding="utf-8")
+
+
+def _read_latest_changelog() -> str | None:
+    if _CHANGELOG_FILE.exists():
+        return _CHANGELOG_FILE.read_text(encoding="utf-8").strip() or None
+    return None
 
 
 def _get_weekly_commits() -> list[git.Commit]:
@@ -134,8 +161,27 @@ def run() -> str:
 
     log.info("Commit explainer starting")
 
+    repo = git.Repo(cfg.ROOT_DIR)
+    head_sha = repo.head.commit.hexsha
+
+    if not _SHA_RE.match(head_sha):
+        raise ValueError(f"Unexpected HEAD SHA format: {head_sha!r}")
+
+    # No new commits since last run — skip Claude, resend cached changelog
+    if head_sha == _read_last_sha():
+        cached = _read_latest_changelog()
+        if cached:
+            log.info("No new commits since last run — resending cached changelog")
+            return (
+                "_No new commits since last changelog. Previous results below._"
+                "\n\n---\n\n" + cached
+            )
+        log.info("No new commits and no cached changelog — nothing to send")
+        return "No new commits since last run and no previous changelog on file."
+
     commits = _get_weekly_commits()
     if not commits:
+        _write_last_sha(head_sha)
         return "No commits in the last 7 days — nothing to explain."
 
     log.info("Found {} commit(s) in the last 7 days", len(commits))
@@ -153,7 +199,11 @@ def run() -> str:
         + now.strftime("%Y-%m-%d")
     )
 
-    changelog, footer = _call_claude(summary, date_range)
+    changelog_body, footer = _call_claude(summary, date_range)
     log.info("Changelog generated for period {}", date_range)
 
-    return changelog + footer
+    # Cache body only — token footer would be stale on repeat sends
+    _write_last_sha(head_sha)
+    _write_latest_changelog(changelog_body)
+
+    return changelog_body + footer
