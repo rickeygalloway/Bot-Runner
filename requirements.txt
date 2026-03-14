@@ -14,6 +14,7 @@ jinja2==3.1.4
 
 # Notifications
 python-telegram-bot==21.3
+Markdown==3.7
 
 # Forex trader bot
 oandapyV20==0.7.2

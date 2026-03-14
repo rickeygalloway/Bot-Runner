@@ -7,17 +7,19 @@ Never called directly by bots — the scheduler calls it after each run.
 Bot config.yaml shape expected:
   notify:
     provider: telegram   # or "email"
-    on: failure          # "success" | "failure" | "always"
+    "on": failure        # "success" | "failure" | "always"
 """
 
 from __future__ import annotations
 
-import smtplib
 import asyncio
+import smtplib
+from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import Literal
 
 import core.config as cfg
+from core.email_renderer import render_html
 from core.logger import framework_logger as log
 
 NotifyOn = Literal["success", "failure", "always"]
@@ -61,12 +63,13 @@ def notify(
         return
 
     subject = f"[BotRunner] {bot_name} — {status.upper()}"
-    body = f"Bot: {bot_name}\nStatus: {status}\n\n{message}"
 
     if provider == "telegram":
-        _send_telegram(subject=subject, body=body)
+        _send_telegram(
+            subject=subject, body=f"Bot: {bot_name}\nStatus: {status}\n\n{message}"
+        )
     elif provider == "email":
-        _send_email(subject=subject, body=body)
+        _send_email(subject=subject, bot_name=bot_name, status=status, message=message)
     else:
         log.warning("Unknown notify provider '{}' for bot '{}'", provider, bot_name)
 
@@ -109,8 +112,8 @@ def _send_telegram(*, subject: str, body: str) -> None:
 # ── Email (Gmail SMTP) ────────────────────────────────────────────────────────
 
 
-def _send_email(*, subject: str, body: str) -> None:
-    """Send a plain-text email via Gmail SMTP with STARTTLS."""
+def _send_email(*, subject: str, bot_name: str, status: str, message: str) -> None:
+    """Send an HTML + plain-text email via Gmail SMTP with STARTTLS."""
     sender = cfg.EMAIL_SENDER
     password = cfg.EMAIL_PASSWORD
     receiver = cfg.EMAIL_RECEIVER
@@ -122,10 +125,15 @@ def _send_email(*, subject: str, body: str) -> None:
         )
         return
 
-    msg = MIMEText(body, "plain", "utf-8")
+    plain = f"Bot: {bot_name}\nStatus: {status}\n\n{message}"
+    html = render_html(bot_name=bot_name, status=status, message=message)
+
+    msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
     msg["From"] = sender
     msg["To"] = receiver
+    msg.attach(MIMEText(plain, "plain", "utf-8"))
+    msg.attach(MIMEText(html, "html", "utf-8"))
 
     try:
         with smtplib.SMTP(cfg.SMTP_HOST, cfg.SMTP_PORT, timeout=15) as smtp:
