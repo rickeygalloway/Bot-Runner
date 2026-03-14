@@ -59,5 +59,17 @@ def get_logger(bot_name: str):
     return _root_logger.bind(bot=bot_name)
 
 
+# ── Framework file sink (scheduler, notifier, etc.) ─────────────────────────
+_root_logger.add(
+    str(LOGS_DIR / "framework.log"),
+    level="DEBUG",
+    format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {extra[bot]} | {message}",
+    rotation="10 MB",
+    retention="7 days",
+    compression="zip",
+    filter=lambda record: record["extra"].get("bot") == "framework",
+    enqueue=True,
+)
+
 # Convenience: a framework-level logger for core/ modules themselves
 framework_logger = _root_logger.bind(bot="framework")

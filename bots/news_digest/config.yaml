@@ -3,5 +3,5 @@ enabled: true
 name: News Digest
 notify:
   provider: email
-  true: always
+  "on": always
 schedule: 0 8 * * *

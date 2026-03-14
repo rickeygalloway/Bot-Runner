@@ -29,7 +29,7 @@ DEFAULT_FEEDS = [
     },
     {
         "name": "BBC News",
-        "url": "http://feeds.bbci.co.uk/news/rss.xml",
+        "url": "https://feeds.bbci.co.uk/news/rss.xml",
         "limit": 5,
     },
     {

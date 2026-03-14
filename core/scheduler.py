@@ -167,30 +167,16 @@ def _write_status(bot_name: str, status: str, message: str) -> None:
 
 
 def _send_startup_report(bots: list[dict]) -> None:
-    """Send one notification per bot summarising load status."""
+    """Notify only for bots that failed to load — successful registration is not actionable."""
     for bot in bots:
-        if bot["error"]:
-            message = f"❌ FAILED TO REGISTER\n" f"Error: {bot['error']}"
-            status = "failure"
-        else:
-            bc = bot["config"]
-            enabled = bc.get("enabled", True)
-            message = (
-                f"{'✅' if enabled else '⏸️'} Bot registered\n"
-                f"Schedule : {bc.get('schedule', 'n/a')}\n"
-                f"Enabled  : {enabled}\n"
-                f"Notifier : {bc.get('notify', {}).get('provider', 'none')} "
-                f"on {bc.get('notify', {}).get('on', 'n/a')}\n"
-                f"Desc     : {bc.get('description', '')}"
-            )
-            status = "success"
-
+        if not bot["error"]:
+            continue
         notify(
             bot_name=bot["config"].get("name", bot["name"])
             if bot["config"]
             else bot["name"],
-            status=status,
-            message=message,
+            status="failure",
+            message=f"❌ FAILED TO REGISTER\nError: {bot['error']}",
             notify_config=bot["config"].get("notify", {}) if bot["config"] else {},
         )
 
