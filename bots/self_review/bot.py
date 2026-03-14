@@ -89,7 +89,6 @@ def _load_project_context() -> str:
 # Loaded once at module import — CLAUDE.md doesn't change between runs
 _PROJECT_CONTEXT: str = _load_project_context()
 
-
 _SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 
 
