@@ -24,17 +24,24 @@ MODEL = "claude-sonnet-4-6"
 MAX_DIFF_CHARS = 12_000  # ~3k tokens; keeps cost predictable on large days
 
 REVIEW_PROMPT = """\
-You are an expert Python code reviewer. Review ONLY the git diff provided below.
+You are an expert Python code reviewer for this specific project. \
+Review ONLY the git diff provided below.
 
-Focus on:
+## Project conventions
+The following rules are enforced in this codebase. Flag any violation as an issue.
+
+{project_context}
+
+## Review focus
 - Bugs and logic errors
 - Security issues (hardcoded secrets, injection risks, unsafe operations)
 - Error handling and robustness
 - Performance anti-patterns
 - Code clarity and maintainability
 - Pythonic improvements and type hint gaps
+- Violations of the project conventions listed above
 
-Structure your response exactly as follows:
+## Response format
 
 **Summary** (1-2 sentences): Overall quality and main theme of changes.
 
@@ -43,16 +50,36 @@ Structure your response exactly as follows:
 **Issues & Suggestions**: Numbered list. Each item must include:
   - File and line range
   - Severity: [CRITICAL / HIGH / MEDIUM / LOW / SUGGESTION]
-  - Description and suggested fix
+  - Description and suggested fix (reference project conventions where applicable)
 
 **Overall Score**: X/10 with one sentence of justification.
 
 If there are no meaningful issues, say so briefly.
 Be specific, actionable, and constructive.
 
-Git diff:
+## Git diff
 {diff}
 """
+
+
+def _load_project_context() -> str:
+    """Extract the coding standards and domain context sections from CLAUDE.md."""
+    claude_md = cfg.ROOT_DIR / "CLAUDE.md"
+    if not claude_md.exists():
+        return "(CLAUDE.md not found — no project conventions available)"
+
+    text = claude_md.read_text(encoding="utf-8")
+
+    # Extract from "## Coding standards" through end of "## Domain context"
+    start = text.find("## Coding standards")
+    if start == -1:
+        return "(Coding standards section not found in CLAUDE.md)"
+
+    # Stop before "## Custom commands" to avoid including irrelevant content
+    end = text.find("## Custom commands", start)
+    section = text[start:end].strip() if end != -1 else text[start:].strip()
+
+    return section
 
 
 def _get_recent_diff(hours: int = 24) -> str | None:
@@ -93,11 +120,15 @@ def _get_recent_diff(hours: int = 24) -> str | None:
 def _call_claude(diff: str) -> str:
     """Send the diff to Claude and return the review text."""
     client = anthropic.Anthropic(api_key=cfg.ANTHROPIC_API_KEY)
+    prompt = REVIEW_PROMPT.format(
+        project_context=_load_project_context(),
+        diff=diff,
+    )
     message = client.messages.create(
         model=MODEL,
         max_tokens=1024,
         messages=[
-            {"role": "user", "content": REVIEW_PROMPT.format(diff=diff)},
+            {"role": "user", "content": prompt},
         ],
     )
     return message.content[0].text.strip()

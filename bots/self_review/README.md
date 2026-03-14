@@ -7,8 +7,9 @@ AI-powered code review of recent commits using Claude. Extracts a git diff of Py
 1. Walks `git log HEAD` for commits in the last 24 hours
 2. Diffs Python files from just before the oldest commit to HEAD
 3. Truncates to 12,000 characters if the diff is large (~3k tokens)
-4. Sends to Claude (`claude-sonnet-4-6`) with a structured review prompt
-5. Returns the review as the run message — delivered via email
+4. Reads `CLAUDE.md` and injects the **Coding standards** and **Domain context** sections as project conventions
+5. Sends to Claude (`claude-sonnet-4-6`) — reviews against both general best practices and project-specific rules
+6. Returns the review as the run message — delivered via email
 
 ## Review format
 
