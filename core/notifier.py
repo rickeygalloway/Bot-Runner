@@ -47,7 +47,8 @@ def notify(
     if not notify_config:
         return
 
-    on: NotifyOn = notify_config.get("on", "failure")
+    # PyYAML (YAML 1.1) parses bare `on:` keys as the boolean True — handle both
+    on: NotifyOn = notify_config.get("on") or notify_config.get(True, "failure")
     provider: str = notify_config.get("provider", "").lower()
 
     # Decide whether to send
@@ -121,7 +122,7 @@ def _send_email(*, subject: str, body: str) -> None:
         )
         return
 
-    msg = MIMEText(body, "plain")
+    msg = MIMEText(body, "plain", "utf-8")
     msg["Subject"] = subject
     msg["From"] = sender
     msg["To"] = receiver

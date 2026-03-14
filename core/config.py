@@ -64,3 +64,6 @@ SMTP_PORT = int(_optional("SMTP_PORT", "587"))
 OANDA_API_KEY = _optional("OANDA_API_KEY")
 OANDA_ACCOUNT_ID = _optional("OANDA_ACCOUNT_ID")
 OANDA_ENV = _optional("OANDA_ENV", "practice")  # "practice" | "live"
+
+# ── Anthropic (AI-powered bots) ───────────────────────────────────────────────
+ANTHROPIC_API_KEY = _optional("ANTHROPIC_API_KEY")

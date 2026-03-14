@@ -29,6 +29,7 @@ All settings are read from `.env` (see `.env.example`). If `.env` is missing, th
 | `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` | — | Telegram notifications |
 | `EMAIL_SENDER` / `EMAIL_PASSWORD` / `EMAIL_RECEIVER` | — | Gmail SMTP notifications |
 | `OANDA_API_KEY` / `OANDA_ACCOUNT_ID` / `OANDA_ENV` | — | Forex trader bot |
+| `ANTHROPIC_API_KEY` | — | Self-review bot (Claude API) |
 
 ## Adding a bot
 
@@ -50,7 +51,7 @@ schedule: "0 9 * * 1-5"   # standard crontab, UTC
 enabled: true
 notify:
   provider: telegram       # "telegram" or "email"
-  on: failure              # "success" | "failure" | "always"
+  "on": failure            # "success" | "failure" | "always"
 ```
 
 The scheduler picks up the new bot automatically on next startup — no registration code needed.
@@ -64,8 +65,9 @@ The scheduler picks up the new bot automatically on next startup — no registra
 
 | Bot | Schedule | Description |
 |-----|----------|-------------|
-| `forex_trader` | Every 4 hours | EUR/USD 9/21 EMA crossover strategy via OANDA |
-| `news_digest` | Daily 08:00 UTC | Reuters, BBC, FT headlines via RSS → email digest |
+| `forex_trader` | Every 4 hours (UTC) | EUR/USD 9/21 EMA crossover strategy via OANDA API. Enforces one open position, daily loss limit, and flat-market filter. |
+| `news_digest` | Daily 08:00 UTC | Fetches top headlines from Reuters, BBC, and FT via RSS and emails a plain-text digest. |
+| `self_review` | Daily 03:00 UTC | AI-powered code review of recent commits using Claude — sends findings by email. Requires `ANTHROPIC_API_KEY`. |
 
 ## Dashboard API
 
