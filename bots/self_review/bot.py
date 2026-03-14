@@ -27,7 +27,8 @@ MAX_DIFF_CHARS = 12_000  # ~3k tokens; keeps cost predictable on large days
 _STATE_FILE = cfg.DATA_DIR / "self_review_last_sha.txt"
 _REVIEW_FILE = cfg.DATA_DIR / "self_review_latest.txt"
 
-# Static part — sent as a cacheable system prompt to avoid re-charging on repeated runs
+# Static part — sent as a cacheable system prompt to avoid re-charging on repeated runs.
+# Contains one placeholder: {project_context}, formatted inside _call_claude().
 SYSTEM_PROMPT = """\
 You are an expert Python code reviewer for this specific project.
 Review ONLY the git diff provided in the user message.
@@ -83,6 +84,10 @@ def _load_project_context() -> str:
 
     # Hard cap so a renamed/missing sentinel never dumps the entire file into the prompt
     return section[:4000]
+
+
+# Loaded once at module import — CLAUDE.md doesn't change between runs
+_PROJECT_CONTEXT: str = _load_project_context()
 
 
 _SHA_RE = re.compile(r"^[0-9a-f]{40}$")
@@ -173,10 +178,15 @@ def _get_new_diff() -> str | None:
     return diff
 
 
-def _call_claude(diff: str) -> str:
-    """Send the diff to Claude and return the review text."""
+def _call_claude(diff: str) -> tuple[str, str]:
+    """
+    Send the diff to Claude and return (review_body, token_footer).
+
+    Returned separately so the caller can cache the body without the footer —
+    token counts from a previous run would be stale if included in the cache.
+    """
     client = anthropic.Anthropic(api_key=cfg.ANTHROPIC_API_KEY)
-    system_text = SYSTEM_PROMPT.format(project_context=_load_project_context())
+    system_text = SYSTEM_PROMPT.format(project_context=_PROJECT_CONTEXT)
 
     message = client.messages.create(
         model=MODEL,
@@ -207,14 +217,12 @@ def _call_claude(diff: str) -> str:
 
     review = message.content[0].text.strip()
 
-    token_footer = (
-        f"\n\n---\n" f"*Model: `{MODEL}` · " f"Tokens: {usage.input_tokens} in"
-    )
+    footer = f"\n\n---\n*Model: `{MODEL}` · Tokens: {usage.input_tokens} in"
     if cache_read:
-        token_footer += f" ({cache_read} cached)"
-    token_footer += f" / {usage.output_tokens} out*"
+        footer += f" ({cache_read} cached)"
+    footer += f" / {usage.output_tokens} out*"
 
-    return review + token_footer
+    return review, footer
 
 
 def run() -> str:
@@ -239,11 +247,11 @@ def run() -> str:
         return "No new commits since last review and no previous review on file."
 
     log.info("Sending diff ({} chars) to Claude", len(diff))
-    review = _call_claude(diff)
+    review_body, token_footer = _call_claude(diff)
 
-    # Only advance the pointer and overwrite the cache after a successful review
+    # Cache the body only — token counts would be stale if shown from a cached run
     _write_last_sha(head_sha)
-    _write_latest_review(review)
+    _write_latest_review(review_body)
     log.info("Review complete — state advanced to {}", head_sha[:8])
 
-    return review
+    return review_body + token_footer
