@@ -3,141 +3,172 @@
 {% block title %}BotRunner{% endblock %}
 
 {% block header_meta %}
-  <span class="meta-label">REFRESHED</span>
-  <span class="meta-value mono">{{ now }}</span>
-  <button class="refresh-btn" onclick="location.reload()">↺ Refresh</button>
+  <span class="opacity-40 font-mono text-xs hidden sm:inline">REFRESHED</span>
+  <span class="font-mono text-xs opacity-70">{{ now }}</span>
+  <button class="btn btn-xs btn-ghost btn-outline font-mono" onclick="location.reload()">↺ Refresh</button>
 {% endblock %}
 
 {% block content %}
 
-  <!-- ── Bot Cards ──────────────────────────────────────────────────────── -->
-  <section class="section">
-    <h2 class="section-title">BOTS</h2>
-    <div class="cards-grid">
-      {% for bot in bots %}
-      <div class="card {% if bot.error %}card--error{% elif not bot.enabled %}card--disabled{% elif bot.last_status == 'success' %}card--success{% elif bot.last_status == 'failure' %}card--failure{% endif %}"
-           id="card-{{ bot.name }}">
+{# ── Bot card macro ──────────────────────────────────────────────────────── #}
+{% macro render_card(bot, is_ai=false) %}
+<div class="card card-compact shadow-md
+            {% if is_ai %}card-ai{% else %}bg-base-200{% endif %}
+            {% if bot.error %}border-2 border-warning
+            {% elif not bot.enabled %}border-2 border-neutral card--disabled
+            {% elif bot.last_status == 'success' %}border-2 border-success
+            {% elif bot.last_status == 'failure' %}border-2 border-error
+            {% else %}border-2 border-base-content/20
+            {% endif %}"
+     id="card-{{ bot.name }}">
 
-        <div class="card-header">
-          <div class="card-title-row">
-            <span class="card-name">{{ bot.display }}</span>
-            <span class="status-pill {% if bot.error %}pill--error{% elif not bot.enabled %}pill--disabled{% elif bot.last_status == 'success' %}pill--success{% elif bot.last_status == 'failure' %}pill--failure{% else %}pill--unknown{% endif %}">
-              {% if bot.error %}ERROR
-              {% elif not bot.enabled %}DISABLED
-              {% elif bot.last_status == 'success' %}OK
-              {% elif bot.last_status == 'failure' %}FAIL
-              {% else %}PENDING{% endif %}
-            </span>
-          </div>
-          <p class="card-description">{{ bot.description }}</p>
+  <div class="card-body p-0">
+
+    {# Header #}
+    <div class="px-4 pt-4 pb-3 border-b border-base-300">
+      <div class="flex items-center justify-between mb-1">
+        <div class="flex items-center gap-2">
+          {% if is_ai %}<span class="text-accent text-xs">✦</span>{% endif %}
+          <span class="font-semibold text-lg {% if is_ai %}text-accent{% else %}text-base-content{% endif %}">{{ bot.display }}</span>
         </div>
-
-        <div class="card-body">
-          <div class="stat-row">
-            <span class="stat-label">SCHEDULE</span>
-            <span class="stat-value mono">{{ bot.schedule }}</span>
-          </div>
-          <div class="stat-row">
-            <span class="stat-label">LAST RUN</span>
-            <span class="stat-value mono">{{ bot.last_run }}</span>
-          </div>
-          <div class="stat-row">
-            <span class="stat-label">NEXT RUN</span>
-            <span class="stat-value mono">{{ bot.next_run }}</span>
-          </div>
-          <div class="stat-row">
-            <span class="stat-label">NOTIFY</span>
-            <span class="stat-value mono">{{ bot.notify.provider | default('—') }} / {{ bot.notify.on | default('—') }}</span>
-          </div>
-          <div class="stat-row stat-row--result">
-            <span class="stat-label">LAST RESULT</span>
-            <span class="stat-value mono result-text">{{ bot.last_result }}</span>
-          </div>
-          <div class="stats-bar">
-            <span class="stat-success">✓ {{ bot.successes }}</span>
-            <span class="stat-failure">✗ {{ bot.failures }}</span>
-            <span class="stat-total">{{ bot.total }} total</span>
-          </div>
-        </div>
-
-        <div class="card-footer">
-          <button class="btn btn--run" onclick="runBot('{{ bot.name }}', this)"
-            {% if bot.error %}disabled{% endif %}>
-            ▶ RUN
-          </button>
-          <button class="btn btn--log" onclick="openLog('{{ bot.name }}')">
-            VIEW LOG
-          </button>
-          <button
-            class="btn btn--toggle {% if bot.enabled %}btn--on{% else %}btn--off{% endif %}"
-            onclick="toggleBot('{{ bot.name }}', this)"
-            {% if bot.error %}disabled{% endif %}>
-            {{ 'ENABLED' if bot.enabled else 'DISABLED' }}
-          </button>
-        </div>
-
-        {% if bot.error %}
-        <div class="error-banner">⚠ {{ bot.error }}</div>
-        {% endif %}
-
+        <span class="badge badge-sm font-mono
+          {% if bot.error %}badge-warning
+          {% elif not bot.enabled %}badge-neutral
+          {% elif bot.last_status == 'success' %}badge-success
+          {% elif bot.last_status == 'failure' %}badge-error
+          {% else %}badge-info{% endif %}">
+          {% if bot.error %}ERROR
+          {% elif not bot.enabled %}DISABLED
+          {% elif bot.last_status == 'success' %}OK
+          {% elif bot.last_status == 'failure' %}FAIL
+          {% else %}PENDING{% endif %}
+        </span>
       </div>
-      {% endfor %}
+      <p class="text-sm opacity-70 leading-snug">{{ bot.description }}</p>
     </div>
-  </section>
 
-  <!-- ── Token Usage ────────────────────────────────────────────────────── -->
-  {% if token_usage %}
-  <section class="section">
-    <h2 class="section-title">TOKEN USAGE</h2>
-    <div class="token-table-wrap">
-      <table class="token-table">
-        <thead>
-          <tr>
-            <th>BOT</th>
-            <th>MODEL</th>
-            <th class="num">RUNS</th>
-            <th class="num">INPUT</th>
-            <th class="num">OUTPUT</th>
-            <th class="num">CACHE READ</th>
-            <th class="num">CACHE WRITE</th>
-            <th class="num">TOTAL</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in token_usage %}
-          <tr>
-            <td class="mono">{{ row.bot_name }}</td>
-            <td class="mono dim">{{ row.model }}</td>
-            <td class="num mono">{{ row.run_count }}</td>
-            <td class="num mono">{{ "{:,}".format(row.total_input) }}</td>
-            <td class="num mono">{{ "{:,}".format(row.total_output) }}</td>
-            <td class="num mono dim">{{ "{:,}".format(row.total_cache_read) }}</td>
-            <td class="num mono dim">{{ "{:,}".format(row.total_cache_write) }}</td>
-            <td class="num mono bright">{{ "{:,}".format(row.total_input + row.total_output) }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    {# Stats #}
+    <div class="px-4 py-3 flex flex-col gap-1">
+      <div class="flex justify-between items-baseline gap-3">
+        <span class="stat-label">SCHEDULE</span>
+        <span class="stat-value mono text-base-content/90">{{ bot.schedule }}</span>
+      </div>
+      <div class="flex justify-between items-baseline gap-3">
+        <span class="stat-label">LAST RUN</span>
+        <span class="stat-value mono text-base-content/90">{{ bot.last_run }}</span>
+      </div>
+      <div class="flex justify-between items-baseline gap-3">
+        <span class="stat-label">NEXT RUN</span>
+        <span class="stat-value mono text-base-content/90">{{ bot.next_run }}</span>
+      </div>
+      <div class="flex justify-between items-baseline gap-3">
+        <span class="stat-label">NOTIFY</span>
+        <span class="stat-value mono text-base-content/90">{{ bot.notify.provider | default('—') }} / {{ bot.notify.on | default('—') }}</span>
+      </div>
+      <div class="stats-bar text-base-content/75 mt-1 pt-2 border-t border-base-300">
+        <span class="text-success">✓ {{ bot.successes }}</span>
+        <span class="text-error">✗ {{ bot.failures }}</span>
+        <span class="ml-auto opacity-40">{{ bot.total }} total</span>
+      </div>
     </div>
-  </section>
-  {% endif %}
 
-  <!-- ── Run History Chart ───────────────────────────────────────────────── -->
-  <section class="section">
-    <h2 class="section-title">RUN HISTORY</h2>
-    <div class="chart-container">
-      <canvas id="runChart"></canvas>
+    {# Footer #}
+    <div class="px-4 pb-4 flex gap-2 justify-end">
+      <button class="btn btn-sm btn-accent font-mono text-xs"
+              onclick="runBot('{{ bot.name }}', this)"
+              {% if bot.error %}disabled{% endif %}>
+        ▶ RUN
+      </button>
+      <button class="btn btn-sm btn-ghost font-mono text-xs"
+              onclick="openLog('{{ bot.name }}')">
+        LOG
+      </button>
+      <button class="btn btn-sm font-mono text-xs
+                     {% if bot.enabled %}btn-success btn-outline{% else %}btn-ghost{% endif %}"
+              onclick="toggleBot('{{ bot.name }}', this)"
+              {% if bot.error %}disabled{% endif %}>
+        {{ 'ENABLED' if bot.enabled else 'DISABLED' }}
+      </button>
     </div>
-  </section>
 
-  <!-- ── Log Viewer ─────────────────────────────────────────────────────── -->
-  <section class="section" id="log-section" style="display:none">
-    <div class="log-header">
-      <h2 class="section-title" id="log-title">LOG</h2>
-      <button class="btn btn--log" onclick="closeLog()">✕ CLOSE</button>
+    {% if bot.error %}
+    <div role="alert" class="alert alert-warning rounded-t-none rounded-b-2xl py-2 px-4 text-xs font-mono">
+      ⚠ {{ bot.error }}
     </div>
-    <pre class="log-viewer" id="log-content">Loading...</pre>
-  </section>
+    {% endif %}
+
+  </div>
+</div>
+{% endmacro %}
+
+{# ── All Bots ──────────────────────────────────────────────────────────── #}
+{% if bots %}
+<section>
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="section-title mb-0">BOTS</h2>
+    <span class="font-mono text-xs opacity-60"><span class="text-accent">✦</span> AI-powered</span>
+  </div>
+  <div class="bot-grid grid gap-4" style="grid-template-columns: repeat(auto-fill, 360px)">
+    {% for bot in bots %}
+      {{ render_card(bot, is_ai=bot.is_ai) }}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{# ── Token Usage ───────────────────────────────────────────────────────── #}
+{% if token_usage %}
+<section>
+  <h2 class="section-title">TOKEN USAGE</h2>
+  <div class="overflow-x-auto rounded-2xl border border-base-300">
+    <table class="table table-sm font-mono text-xs w-full">
+      <thead class="bg-base-300/50">
+        <tr>
+          <th>BOT</th>
+          <th>MODEL</th>
+          <th class="text-right">RUNS</th>
+          <th class="text-right">INPUT</th>
+          <th class="text-right">OUTPUT</th>
+          <th class="text-right opacity-50">CACHE READ</th>
+          <th class="text-right opacity-50">CACHE WRITE</th>
+          <th class="text-right text-accent">TOTAL</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in token_usage %}
+        <tr class="hover">
+          <td class="font-semibold">{{ row.bot_name }}</td>
+          <td class="opacity-50">{{ row.model }}</td>
+          <td class="text-right">{{ row.run_count }}</td>
+          <td class="text-right">{{ "{:,}".format(row.total_input) }}</td>
+          <td class="text-right">{{ "{:,}".format(row.total_output) }}</td>
+          <td class="text-right opacity-50">{{ "{:,}".format(row.total_cache_read) }}</td>
+          <td class="text-right opacity-50">{{ "{:,}".format(row.total_cache_write) }}</td>
+          <td class="text-right font-semibold text-accent">{{ "{:,}".format(row.total_input + row.total_output) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+{# ── Run History ───────────────────────────────────────────────────────── #}
+<section>
+  <h2 class="section-title">RUN HISTORY</h2>
+  <div class="bg-base-200 border border-base-300 rounded-2xl p-6" style="height:280px">
+    <canvas id="runChart"></canvas>
+  </div>
+</section>
+
+{# ── Log Viewer ────────────────────────────────────────────────────────── #}
+<section id="log-section" class="hidden">
+  <div class="flex items-center justify-between mb-3">
+    <h2 class="section-title mb-0" id="log-title">LOG</h2>
+    <button class="btn btn-xs btn-ghost font-mono" onclick="closeLog()">✕ CLOSE</button>
+  </div>
+  <pre class="log-viewer" id="log-content">Loading...</pre>
+</section>
 
 {% endblock %}
 

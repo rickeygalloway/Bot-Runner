@@ -2,6 +2,7 @@ name: Dependency Audit
 description: Weekly check of pinned packages against latest PyPI versions with AI security summary
 schedule: "0 9 * * 1"   # Monday 09:00 UTC
 enabled: true
+ai: true
 notify:
   provider: email
   "on": always

@@ -2,6 +2,7 @@ name: Stock Screener
 description: Weekly AI-powered screen of a watchlist for best buy opportunities
 schedule: "0 21 * * 5"   # Friday 21:00 UTC — after US market close
 enabled: true
+ai: true
 notify:
   provider: email
   "on": always

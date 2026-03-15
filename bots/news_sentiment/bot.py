@@ -141,7 +141,7 @@ def _call_claude(headlines: str, system_prompt: str) -> tuple[str, str]:
         cache_write_tokens=cache_write,
     )
     body = message.content[0].text.strip()
-    footer = f"\n\n---\n*Model: `{MODEL}` · Tokens: {usage.input_tokens} in"
+    footer = f"\n\n---\n*Model: `{MODEL}` | Tokens: {usage.input_tokens} in"
     if cache_read:
         footer += f" ({cache_read} cached)"
     footer += f" / {usage.output_tokens} out*"

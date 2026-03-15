@@ -97,6 +97,7 @@ def _build_bot_cards() -> list[dict]:
                 "failures": stats["failures"],
                 "total": stats["total"],
                 "notify": bc.get("notify", {}),
+                "is_ai": bool(bc.get("ai", False)),
             }
         )
 

@@ -1,7 +1,8 @@
 name: Self Review
-description: AI-powered code review of recent commits using Claude — the repo reviewing itself
+description: AI-powered code review of recent commits using Claude - the repo reviewing itself
 schedule: "0 3 * * *"   # daily at 03:00 UTC
 enabled: true
+ai: true
 notify:
   provider: email
   "on": always

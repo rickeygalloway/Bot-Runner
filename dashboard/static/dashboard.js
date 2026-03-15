@@ -8,9 +8,9 @@
 
   // Group runs by bot, build a timeline dataset
   const botNames = [...new Set(ALL_RUNS.map(r => r.bot_name))];
-  const GREEN = 'rgba(61, 220, 132, 0.85)';
-  const RED   = 'rgba(255, 79, 79, 0.85)';
-  const DIM   = 'rgba(80, 80, 80, 0.5)';
+  const GREEN = 'rgba(34, 197, 94, 0.85)';
+  const RED   = 'rgba(239, 68, 68, 0.85)';
+  const DIM   = 'rgba(51, 65, 85, 0.5)';
 
   // Build labels from unique dates (last 30 days worth of runs)
   const sorted = [...ALL_RUNS]
@@ -54,39 +54,39 @@
         x: {
           stacked: false,
           ticks: {
-            color: '#444',
+            color: '#334155',
             font: { family: "'IBM Plex Mono'", size: 9 },
             maxTicksLimit: 12,
             maxRotation: 0,
           },
-          grid: { color: '#1a1a1a' },
+          grid: { color: '#1e293b' },
         },
         y: {
           min: -1.5,
           max: 1.5,
           ticks: {
-            color: '#444',
+            color: '#334155',
             font: { family: "'IBM Plex Mono'", size: 9 },
             callback: v => v === 1 ? 'OK' : v === -1 ? 'FAIL' : '',
           },
-          grid: { color: '#1a1a1a' },
+          grid: { color: '#1e293b' },
         },
       },
       plugins: {
         legend: {
           labels: {
-            color: '#666',
+            color: '#64748b',
             font: { family: "'IBM Plex Mono'", size: 10 },
             boxWidth: 10,
             padding: 16,
           },
         },
         tooltip: {
-          backgroundColor: '#181818',
-          borderColor: '#2a2a2a',
+          backgroundColor: '#1c2a47',
+          borderColor: '#24334f',
           borderWidth: 1,
-          titleColor: '#e8e8e8',
-          bodyColor: '#888',
+          titleColor: '#b0c4de',
+          bodyColor: '#64748b',
           titleFont: { family: "'IBM Plex Mono'", size: 11 },
           bodyFont:  { family: "'IBM Plex Mono'", size: 10 },
           callbacks: {
@@ -116,7 +116,9 @@ async function toggleBot(botName, btn) {
     const data = await res.json();
 
     btn.textContent = data.enabled ? 'ENABLED' : 'DISABLED';
-    btn.className = `btn btn--toggle ${data.enabled ? 'btn--on' : 'btn--off'}`;
+    btn.className = data.enabled
+      ? 'btn btn-sm btn-success btn-outline font-mono text-xs'
+      : 'btn btn-sm btn-ghost font-mono text-xs';
 
     // Update card accent class
     const card = document.getElementById(`card-${botName}`);
@@ -138,7 +140,7 @@ async function toggleBot(botName, btn) {
 async function runBot(botName, btn) {
   btn.disabled = true;
   btn.textContent = '● RUNNING';
-  btn.classList.add('running');
+  btn.classList.replace('btn-accent', 'btn-warning');
 
   try {
     const res = await fetch(`/api/bots/${botName}/run`, { method: 'POST' });
@@ -146,7 +148,7 @@ async function runBot(botName, btn) {
     location.reload();
   } catch (err) {
     btn.textContent = '▶ RUN';
-    btn.classList.remove('running');
+    btn.classList.replace('btn-warning', 'btn-accent');
     btn.disabled = false;
     console.error('Run failed:', err);
   }
