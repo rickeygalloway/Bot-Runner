@@ -1,31 +1,43 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="night">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{% block title %}BotRunner{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.14/dist/full.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="/static/style.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            mono: ["'IBM Plex Mono'", 'monospace'],
+            sans: ["'IBM Plex Sans'", 'sans-serif'],
+          },
+        },
+      },
+    }
+  </script>
   {% block head %}{% endblock %}
 </head>
 <body>
 
-  <header>
-    <div class="header-inner">
-      <div class="logo">
-        <span class="logo-bracket">[</span>
-        BOTRUNNER
-        <span class="logo-bracket">]</span>
-      </div>
-      <div class="header-meta">
-        {% block header_meta %}{% endblock %}
-        <a href="/setup" class="refresh-btn" style="text-decoration:none;">⚙ Setup</a>
-      </div>
+  <header class="navbar bg-base-200 border-b border-base-300 sticky top-0 z-50 px-6 min-h-[56px]">
+    <div class="navbar-start">
+      <span class="font-mono font-semibold tracking-widest text-sm text-base-content">
+        <span class="text-accent">[</span>BOTRUNNER<span class="text-accent">]</span>
+      </span>
+    </div>
+    <div class="navbar-end gap-2 font-mono text-xs">
+      {% block header_meta %}{% endblock %}
+      <a href="/setup" class="btn btn-xs btn-ghost btn-outline font-mono" style="text-decoration:none;">⚙ Setup</a>
     </div>
   </header>
 
-  <main>
+  <main class="max-w-[1400px] mx-auto px-6 py-8 flex flex-col gap-10">
     {% block content %}{% endblock %}
   </main>
 

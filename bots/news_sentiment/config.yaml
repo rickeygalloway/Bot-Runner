@@ -2,6 +2,7 @@ name: News Sentiment
 description: Daily AI-powered news briefing structured by configurable topics
 schedule: "30 8 * * *"   # 08:30 UTC daily — 30 min after news_digest
 enabled: true
+ai: true
 notify:
   provider: email
   "on": always

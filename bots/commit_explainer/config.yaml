@@ -2,6 +2,7 @@ name: Commit Explainer
 description: Weekly plain-English changelog of commits using Claude
 schedule: "0 7 * * 1"   # every Monday at 07:00 UTC — recap of the past week
 enabled: true
+ai: true
 notify:
   provider: email
   "on": always

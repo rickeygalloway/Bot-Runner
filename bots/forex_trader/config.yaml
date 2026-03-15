@@ -1,5 +1,5 @@
 name: Forex Trader
-description: EUR/USD 4H — 9 EMA / 21 EMA crossover strategy via OANDA API
+description: EUR/USD 4H - 9 EMA / 21 EMA crossover strategy via OANDA API
 schedule: "0 */4 * * *"   # runs on every 4H candle close (00:00, 04:00, 08:00 ...)
 enabled: true
 notify:

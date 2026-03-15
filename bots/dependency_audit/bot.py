@@ -42,7 +42,7 @@ Response format:
 - <package> <version>
 
 ### Outdated
-- <package> <pinned> → <latest> [MAJOR / MINOR / PATCH] — <brief note if notable>
+- <package> <pinned> -> <latest> [MAJOR / MINOR / PATCH] - <brief note if notable>
 
 ### Security / deprecation concerns
 - <package>: <concern>
@@ -116,7 +116,7 @@ def _call_claude(table: str) -> tuple[str, str]:
         cache_write_tokens=cache_write,
     )
     body = message.content[0].text.strip()
-    footer = f"\n\n---\n*Model: `{MODEL}` · Tokens: {usage.input_tokens} in"
+    footer = f"\n\n---\n*Model: `{MODEL}` | Tokens: {usage.input_tokens} in"
     if cache_read:
         footer += f" ({cache_read} cached)"
     footer += f" / {usage.output_tokens} out*"
