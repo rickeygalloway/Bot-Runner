@@ -9,14 +9,14 @@ changelog grouped by theme — what changed and why, no code review detail.
 
 from __future__ import annotations
 
+import re
 from datetime import datetime, timedelta, timezone
 
 import anthropic
 import git
 
-import re
-
 import core.config as cfg
+from core.database import record_token_usage
 from core.logger import get_logger
 
 log = get_logger("commit_explainer")
@@ -142,6 +142,14 @@ def _call_claude(summary: str, date_range: str) -> tuple[str, str]:
         cache_read,
         cache_write,
         usage.output_tokens,
+    )
+    record_token_usage(
+        bot_name="commit_explainer",
+        model=MODEL,
+        input_tokens=usage.input_tokens,
+        output_tokens=usage.output_tokens,
+        cache_read_tokens=cache_read,
+        cache_write_tokens=cache_write,
     )
 
     changelog = message.content[0].text.strip()

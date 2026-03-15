@@ -69,6 +69,9 @@ The scheduler picks up the new bot automatically on next startup — no registra
 | `news_digest` | Daily 08:00 UTC | Fetches top headlines from Reuters, BBC, and FT via RSS and emails a plain-text digest. |
 | `self_review` | Daily 03:00 UTC | AI-powered code review of recent commits using Claude — sends findings by email. Requires `ANTHROPIC_API_KEY`. |
 | `commit_explainer` | Monday 07:00 UTC | Weekly plain-English changelog of the past 7 days of commits, grouped by theme. Requires `ANTHROPIC_API_KEY`. |
+| `dependency_audit` | Monday 09:00 UTC | Checks all pinned packages against PyPI latest; Claude flags outdated and security concerns. Requires `ANTHROPIC_API_KEY`. |
+| `news_sentiment` | Daily 08:30 UTC | AI market sentiment briefing — USD/EUR/equity outlook from top financial headlines. Requires `ANTHROPIC_API_KEY`. |
+| `stock_screener` | Friday 21:00 UTC | Weekly AI screen of a configurable watchlist for best buy opportunities. Requires `ANTHROPIC_API_KEY`. |
 
 ## Dashboard API
 
