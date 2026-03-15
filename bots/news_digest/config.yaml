@@ -1,7 +1,23 @@
-description: Fetches top headlines from Reuters, BBC, and FT and sends a daily digest
-enabled: true
 name: News Digest
+description: Fetches top headlines from configured topics and sends a daily digest
+schedule: "0 8 * * *"   # 08:00 UTC daily
+enabled: true
 notify:
   provider: email
   "on": always
-schedule: 0 8 * * *
+
+# Each topic maps to one RSS feed. Set limit to control how many articles to include.
+# Leave url blank ("") to skip that topic.
+topics:
+  - name: Alabama
+    url: ""  # e.g. https://www.al.com/arc/outboundfeeds/rss/
+    limit: 2
+  - name: US
+    url: "https://feeds.bbci.co.uk/news/us-and-canada/rss.xml"
+    limit: 2
+  - name: World
+    url: "https://feeds.bbci.co.uk/news/world/rss.xml"
+    limit: 2
+  - name: Finance
+    url: "https://feeds.reuters.com/reuters/businessNews"
+    limit: 2

@@ -2,25 +2,24 @@
 bots/news_digest/bot.py
 Fetches top headlines from RSS feeds and emails a formatted daily digest.
 
-Sources (configurable via config.yaml):
-  - Reuters Business
-  - BBC News
-  - Financial Times (public RSS)
-
-No external API key needed — pure RSS parsing with feedparser.
+Sources are configured via the `topics:` block in config.yaml.
+Each topic entry needs: name, url, limit.
+Falls back to DEFAULT_FEEDS if no topics are configured.
 """
 
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from pathlib import Path
 
 import feedparser
+import yaml
 
 from core.logger import get_logger
 
 log = get_logger("news_digest")
 
-# ── Default RSS feeds ─────────────────────────────────────────────────────────
+# ── Default RSS feeds (used if config.yaml has no topics: block) ──────────────
 DEFAULT_FEEDS = [
     {
         "name": "Reuters Business",
@@ -38,6 +37,34 @@ DEFAULT_FEEDS = [
         "limit": 5,
     },
 ]
+
+
+# ── Config loading ─────────────────────────────────────────────────────────────
+
+
+def _load_feeds() -> list[dict]:
+    """
+    Load feed list from config.yaml topics block.
+    Each entry must have name, url, and limit.
+    Skips entries with an empty or missing url.
+    Falls back to DEFAULT_FEEDS if no valid topics found.
+    """
+    config_path = Path(__file__).parent / "config.yaml"
+    try:
+        config = yaml.safe_load(config_path.read_text())
+        topics = config.get("topics") or []
+        feeds = [
+            {"name": t["name"], "url": t["url"], "limit": int(t.get("limit", 5))}
+            for t in topics
+            if t.get("url")
+        ]
+        if feeds:
+            log.info("Loaded {} topic(s) from config.yaml", len(feeds))
+            return feeds
+    except Exception as exc:
+        log.warning("Could not load topics from config.yaml: {}", exc)
+    log.info("Using default feeds")
+    return DEFAULT_FEEDS
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -95,9 +122,10 @@ def run() -> str:
     """
     log.info("--- News Digest run starting ---")
 
+    feeds = _load_feeds()
     all_results: dict[str, list[dict]] = {}
 
-    for feed_cfg in DEFAULT_FEEDS:
+    for feed_cfg in feeds:
         all_results[feed_cfg["name"]] = _fetch_feed(feed_cfg)
 
     total = sum(len(v) for v in all_results.values())

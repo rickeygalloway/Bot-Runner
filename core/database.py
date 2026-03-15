@@ -63,6 +63,22 @@ def init_db() -> None:
         """)
         con.execute("CREATE INDEX IF NOT EXISTS idx_runs_bot ON runs (bot_name)")
         con.execute("CREATE INDEX IF NOT EXISTS idx_runs_start ON runs (start_time)")
+
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS token_usage (
+                id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp          TEXT    NOT NULL,
+                bot_name           TEXT    NOT NULL,
+                model              TEXT    NOT NULL,
+                input_tokens       INTEGER NOT NULL DEFAULT 0,
+                output_tokens      INTEGER NOT NULL DEFAULT 0,
+                cache_read_tokens  INTEGER NOT NULL DEFAULT 0,
+                cache_write_tokens INTEGER NOT NULL DEFAULT 0
+            )
+        """)
+        con.execute(
+            "CREATE INDEX IF NOT EXISTS idx_tokens_bot ON token_usage (bot_name)"
+        )
     log.info("Database initialised at {}", DATABASE_URL)
 
 
@@ -158,3 +174,57 @@ def get_run_stats(bot_name: str) -> dict:
             (bot_name,),
         ).fetchone()
     return dict(row) if row else {"successes": 0, "failures": 0, "total": 0}
+
+
+# ── Token usage ───────────────────────────────────────────────────────────────
+
+
+def record_token_usage(
+    *,
+    bot_name: str,
+    model: str,
+    input_tokens: int,
+    output_tokens: int,
+    cache_read_tokens: int = 0,
+    cache_write_tokens: int = 0,
+) -> None:
+    """Persist token usage from a single AI API call."""
+    with _conn() as con:
+        con.execute(
+            """
+            INSERT INTO token_usage
+                (timestamp, bot_name, model, input_tokens, output_tokens,
+                 cache_read_tokens, cache_write_tokens)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                _now_iso(),
+                bot_name,
+                model,
+                input_tokens,
+                output_tokens,
+                cache_read_tokens,
+                cache_write_tokens,
+            ),
+        )
+
+
+def get_token_usage_summary() -> list[dict]:
+    """Return lifetime token totals grouped by bot and model."""
+    with _conn() as con:
+        rows = con.execute(
+            """
+            SELECT
+                bot_name,
+                model,
+                COUNT(*)                    AS run_count,
+                SUM(input_tokens)           AS total_input,
+                SUM(output_tokens)          AS total_output,
+                SUM(cache_read_tokens)      AS total_cache_read,
+                SUM(cache_write_tokens)     AS total_cache_write
+            FROM token_usage
+            GROUP BY bot_name, model
+            ORDER BY bot_name, model
+            """
+        ).fetchall()
+    return [dict(row) for row in rows]

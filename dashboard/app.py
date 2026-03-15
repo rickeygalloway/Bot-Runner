@@ -17,7 +17,13 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 import core.config as cfg
-from core.database import get_all_runs, get_last_run, get_recent_runs, get_run_stats
+from core.database import (
+    get_all_runs,
+    get_last_run,
+    get_recent_runs,
+    get_run_stats,
+    get_token_usage_summary,
+)
 from core.health import env_file_exists, get_env_status
 from core.scheduler import get_registered_bots
 
@@ -112,6 +118,7 @@ async def index(request: Request):
             "request": request,
             "bots": cards,
             "all_runs": all_runs,
+            "token_usage": get_token_usage_summary(),
             "now": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
         },
     )
@@ -210,6 +217,12 @@ async def get_log(bot_name: str, lines: int = 200):
         all_lines = f.readlines()
     tail = all_lines[-lines:]
     return PlainTextResponse("".join(tail))
+
+
+@app.get("/api/token-usage")
+async def api_token_usage():
+    """Return aggregated token usage grouped by bot and model."""
+    return get_token_usage_summary()
 
 
 @app.get("/setup", response_class=HTMLResponse)

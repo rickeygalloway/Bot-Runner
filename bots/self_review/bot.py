@@ -17,6 +17,7 @@ import anthropic
 import git
 
 import core.config as cfg
+from core.database import record_token_usage
 from core.logger import get_logger
 
 log = get_logger("self_review")
@@ -212,6 +213,14 @@ def _call_claude(diff: str) -> tuple[str, str]:
         cache_read,
         cache_write,
         usage.output_tokens,
+    )
+    record_token_usage(
+        bot_name="self_review",
+        model=MODEL,
+        input_tokens=usage.input_tokens,
+        output_tokens=usage.output_tokens,
+        cache_read_tokens=cache_read,
+        cache_write_tokens=cache_write,
     )
 
     review = message.content[0].text.strip()

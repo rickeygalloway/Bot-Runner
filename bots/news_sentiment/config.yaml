@@ -1,0 +1,25 @@
+name: News Sentiment
+description: Daily AI-powered news briefing structured by configurable topics
+schedule: "30 8 * * *"   # 08:30 UTC daily — 30 min after news_digest
+enabled: true
+notify:
+  provider: email
+  "on": always
+
+# Topics Claude will cover in the briefing — plain strings, no URLs needed.
+# Claude receives all headlines and structures its analysis around these topics.
+topics:
+  - Alabama
+  - US
+  - World
+  - Finance
+
+# Optional: override the RSS feeds used as the headline source.
+# If omitted, defaults to Reuters Business, BBC News, and Financial Times.
+# feeds:
+#   - name: Reuters Business
+#     url: "https://feeds.reuters.com/reuters/businessNews"
+#     limit: 8
+#   - name: BBC News
+#     url: "https://feeds.bbci.co.uk/news/rss.xml"
+#     limit: 8

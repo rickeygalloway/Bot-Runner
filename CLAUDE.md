@@ -74,7 +74,12 @@ cron fires → _make_job() wrapper → bot.run()
 ## Git rules
 
 - **Never run `git push`** — always leave pushing to the user
-- After making changes, flag if README.md needs updating (new setup steps, changed API endpoints, new bots)
+- **Always update README.md** when any of the following change:
+  - A bot is added, removed, or renamed (`## Included bots` table)
+  - An API endpoint is added or removed (`## Dashboard API` table)
+  - An env var is added or removed (`## Configuration` table)
+  - Setup or run steps change (`## Quick start`)
+  - A new dependency is added that requires manual installation
 
 ## Security rules
 

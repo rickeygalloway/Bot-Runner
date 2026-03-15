@@ -85,6 +85,43 @@
     </div>
   </section>
 
+  <!-- ── Token Usage ────────────────────────────────────────────────────── -->
+  {% if token_usage %}
+  <section class="section">
+    <h2 class="section-title">TOKEN USAGE</h2>
+    <div class="token-table-wrap">
+      <table class="token-table">
+        <thead>
+          <tr>
+            <th>BOT</th>
+            <th>MODEL</th>
+            <th class="num">RUNS</th>
+            <th class="num">INPUT</th>
+            <th class="num">OUTPUT</th>
+            <th class="num">CACHE READ</th>
+            <th class="num">CACHE WRITE</th>
+            <th class="num">TOTAL</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in token_usage %}
+          <tr>
+            <td class="mono">{{ row.bot_name }}</td>
+            <td class="mono dim">{{ row.model }}</td>
+            <td class="num mono">{{ row.run_count }}</td>
+            <td class="num mono">{{ "{:,}".format(row.total_input) }}</td>
+            <td class="num mono">{{ "{:,}".format(row.total_output) }}</td>
+            <td class="num mono dim">{{ "{:,}".format(row.total_cache_read) }}</td>
+            <td class="num mono dim">{{ "{:,}".format(row.total_cache_write) }}</td>
+            <td class="num mono bright">{{ "{:,}".format(row.total_input + row.total_output) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% endif %}
+
   <!-- ── Run History Chart ───────────────────────────────────────────────── -->
   <section class="section">
     <h2 class="section-title">RUN HISTORY</h2>
