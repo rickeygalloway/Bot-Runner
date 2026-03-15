@@ -140,7 +140,7 @@ async function toggleBot(botName, btn) {
 async function runBot(botName, btn) {
   btn.disabled = true;
   btn.textContent = '● RUNNING';
-  btn.classList.add('btn-warning');
+  btn.classList.replace('btn-accent', 'btn-warning');
 
   try {
     const res = await fetch(`/api/bots/${botName}/run`, { method: 'POST' });
@@ -148,7 +148,7 @@ async function runBot(botName, btn) {
     location.reload();
   } catch (err) {
     btn.textContent = '▶ RUN';
-    btn.classList.remove('btn-warning');
+    btn.classList.replace('btn-warning', 'btn-accent');
     btn.disabled = false;
     console.error('Run failed:', err);
   }
