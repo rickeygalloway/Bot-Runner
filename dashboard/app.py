@@ -10,9 +10,15 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+import anthropic
 import yaml
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
+from fastapi.responses import (
+    HTMLResponse,
+    PlainTextResponse,
+    RedirectResponse,
+    StreamingResponse,
+)
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -102,6 +108,54 @@ def _build_bot_cards() -> list[dict]:
         )
 
     return cards
+
+
+def _build_chat_system_prompt(
+    cards: list[dict], token_usage: list[dict], recent_runs: list[dict]
+) -> str:
+    lines = [
+        "You are a helpful assistant embedded in BotRunner, an automated bot scheduler.",
+        f"Current time: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}",
+        "",
+        "## Bot Status",
+        "Name | Enabled | Last Status | Last Run | Next Run | Schedule | Successes | Failures",
+        "-----|---------|-------------|----------|----------|----------|-----------|--------",
+    ]
+    for c in cards:
+        lines.append(
+            f"{c['display']} | {'yes' if c['enabled'] else 'no'} | {c['last_status']} | "
+            f"{c['last_run']} | {c['next_run']} | {c['schedule']} | "
+            f"{c['successes']} | {c['failures']}"
+        )
+
+    lines += [
+        "",
+        "## Recent Runs (up to 100, newest first)",
+        "Bot | Status | Time | Message",
+    ]
+    lines.append("----|--------|------|-------")
+    for r in recent_runs[:100]:
+        msg = (r.get("message") or "").replace("\n", " ")[:120]
+        lines.append(
+            f"{r['bot_name']} | {r['status']} | {r['start_time'][:19]} | {msg}"
+        )
+
+    if token_usage:
+        lines += ["", "## Token Usage", "Bot | Model | Runs | Input | Output | Total"]
+        lines.append("----|-------|------|-------|--------|------")
+        for t in token_usage:
+            total = t["total_input"] + t["total_output"]
+            lines.append(
+                f"{t['bot_name']} | {t['model']} | {t['run_count']} | "
+                f"{t['total_input']:,} | {t['total_output']:,} | {total:,}"
+            )
+
+    lines += [
+        "",
+        "Answer questions about bot performance, failures, run history, and token costs.",
+        "Be concise and specific. Use numbers from the data above when relevant.",
+    ]
+    return "\n".join(lines)
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
@@ -224,6 +278,41 @@ async def get_log(bot_name: str, lines: int = 200):
 async def api_token_usage():
     """Return aggregated token usage grouped by bot and model."""
     return get_token_usage_summary()
+
+
+@app.post("/api/chat")
+async def chat(request: Request):
+    """Stream a Claude response about live bot data via Server-Sent Events."""
+    if not cfg.ANTHROPIC_API_KEY:
+        raise HTTPException(status_code=503, detail="ANTHROPIC_API_KEY not configured")
+
+    body = await request.json()
+    messages = body.get("messages", [])
+    if not messages:
+        raise HTTPException(status_code=400, detail="messages required")
+
+    cards = _build_bot_cards()
+    token_usage = get_token_usage_summary()
+    recent_runs = get_all_runs(limit=100)
+    system_prompt = _build_chat_system_prompt(cards, token_usage, recent_runs)
+
+    async def generate():
+        client = anthropic.AsyncAnthropic(api_key=cfg.ANTHROPIC_API_KEY)
+        try:
+            async with client.messages.stream(
+                model="claude-opus-4-6",
+                max_tokens=4096,
+                system=system_prompt,
+                messages=messages,
+            ) as stream:
+                async for text in stream.text_stream:
+                    yield f"data: {json.dumps({'text': text})}\n\n"
+        except Exception as exc:
+            yield f"data: {json.dumps({'error': str(exc)})}\n\n"
+        finally:
+            yield "data: [DONE]\n\n"
+
+    return StreamingResponse(generate(), media_type="text/event-stream")
 
 
 @app.get("/setup", response_class=HTMLResponse)
