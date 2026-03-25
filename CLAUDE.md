@@ -2,6 +2,18 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Project Type
+
+Python
+
+## Commands
+
+- **Format**: `ruff format .`
+- **Lint**: `ruff check .`
+- **Type check**: `mypy .`
+- **Test**: `pytest`
+- **Install deps**: `pip install -r requirements.txt`
+
 ## Running the application
 
 ```bash

@@ -1,0 +1,11 @@
+﻿title = "Gitleaks Config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Safe files that may contain example secrets"
+paths = [
+    ".env.example",
+    "requirements-dev.txt",
+]

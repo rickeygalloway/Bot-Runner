@@ -35,6 +35,9 @@ htmlcov/
 .mypy_cache/
 .pytype/
 
+# Ruff cache
+.ruff_cache/
+
 # IDEs
 .vscode/
 .idea/
